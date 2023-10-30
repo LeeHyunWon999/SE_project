@@ -107,7 +107,13 @@ class _TodoListState extends State<TodoList> {
       children: [
         ListTile(
           contentPadding: EdgeInsets.only(left:16.0 + depth * 16.0), // 하위작업 들여쓰기용 패딩 // inset padding for subtasks
-          title: Text(item.title),
+          title: Row(
+            children: [
+              Text(item.title),
+              SizedBox(width:8.0),
+              Icon(Icons.star, color: Colors.yellow),
+            ],
+          ),
           trailing: Checkbox(
             value: item.isCompleted,
             onChanged: (bool? value) {
@@ -116,6 +122,42 @@ class _TodoListState extends State<TodoList> {
               });
             },
           ),
+          onTap: () { // 클릭 시 속성 확인 및 수정 가능 페이지로 이동하는 것을 구상중 // thinking of onClick : check attr & editing page
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (BuildContext context){
+                return AlertDialog(
+                  title: Text("Attributes"),
+                  content: Column(
+                    children: [
+                      Text("Show here editable attrs, Description, Hyperlinks, File + preview"),
+                      // 여기에 각종 속성 보기 및 수정작업 // attrs and editing features here
+
+                    ],
+                  ),
+                  actions: <Widget>[
+                    Container(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); //창 닫기 // close Dialog with apply changes
+                        },
+                        child: Text("Apply"),
+                      ),
+                    ),
+                    Container(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); //창 닫기 // close Dialog with discard changes
+                        },
+                        child: Text("Cancel"),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         ),
         // 하위 작업을 여기서 빌드 // build subtasks here
         for (var subItem in item.subTasks) _buildItem(subItem, depth + 1)
@@ -126,7 +168,7 @@ class _TodoListState extends State<TodoList> {
 
 
 
-// 작업 생성, 드래그&드롭 및 표시 등 관리해주는 클래스 // Create, Drag&Drop, etc. managin Class
+// 작업 생성, 드래그&드롭 및 표시 등 관리해주는 클래스 // Create, Drag&Drop, etc. managing Class
 class ItemManager {
   // 자료구조 변수, 초기화는 나중에 생성하면서 진행 // Var : TodoItem, init later
   late TodoItem ItemTree;

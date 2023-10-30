@@ -36,21 +36,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -61,15 +46,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -82,33 +58,106 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: TodoList(items: sampleTasks),
-      bottomNavigationBar: IconButton(
-        icon:Icon(Icons.priority_high),
+      bottomNavigationBar: TextButton(
+        child: Text("Create New Root Tasks"),
         onPressed: (){
+
+          // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
+          final TaskNameController = TextEditingController();
+          final TaskPriorController = TextEditingController();
+          final TaskLocController = TextEditingController();
+          final TaskRelateController = TextEditingController();
+          final TaskTagController = TextEditingController();
+          // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
+          // myController.text 형식으로 접근 // access fields by like myController.text
+
           showDialog(
             context: context,
             barrierDismissible: true,
             builder: (BuildContext context){
               return AlertDialog(
-                content: Icon(Icons.add),
+                title: Icon(Icons.add),
+                content: Container( // 너비지정용 // setting width by this
+                  width: 600,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("creating root task UI"),
+                      TextField(
+                        controller: TaskNameController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Task name',
+                          )
+                      ),
+                      SizedBox(height: 10,),
+                      TextField(
+                        controller: TaskPriorController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Priority(need to be change into number input)',
+                          )
+                      ),
+                      SizedBox(height: 10,),
+                      TextField(
+                        controller: TaskLocController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'location(optional)',
+                          )
+                      ),
+                      SizedBox(height: 10,),
+                      TextField(
+                        controller: TaskRelateController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'related Tasks(optional)(need to be change into task select box)',
+                          )
+                      ),
+                      SizedBox(height: 10,),
+                      TextField(
+                        controller: TaskTagController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'tags(optional)(no need to be change but need to parsing to use)',
+                          )
+                      ),
+                      // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
+                      SizedBox(height: 10,),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  Container(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); //창 닫기 // close Dialog with Create tasks
+                        // 작업 생성 시도
+                        setState(() {
+                          sampleTasks.add(TodoItem(title: TaskNameController.text, relatedTasks: [], // 임시 : 연관작업에 컨트롤러 연동시키기 // temp : allocate related job into controller
+                              tags: TaskTagController.text.split(","), subTasks: [], location: TaskLocController.text));
+                        });
 
+
+                      },
+                      child: Text("Create"),
+                    ),
+                  ),
+                  Container(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); //창 닫기 // close Dialog with cancel
+                      },
+                      child: Text("Cancel"),
+                    ),
+                  ),
+                ],
               );
             },
           );

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // Todo Item을 저장할 수 있는 자료구조(트리) 클래스 // Tree class : Todo Item
 class TodoItem {
   String title; // 작업명(초기 생성 시 고정? 그럴 필요는 없지 않나?) // Task name
+  String description; // 작업 설명 // Task description
   int priority; // 속성 : 우선순위(필수) // attr(necessary)
   String location; // 속성 : 수행장소(옵셔널) // attr(optional)
   List<TodoItem> relatedTasks; // 속성 : 연관작업목록 // attr(optional)
@@ -15,10 +16,13 @@ class TodoItem {
   bool isCompleted; // 완료되었는가? // work for higher task's complete progress
   TodoItem? parent; // 자신의 부모 노드, root는 null을 가질 수 있음 // it's parent node(Item), root node can take parent 'null'
   double progress; // 하위 목록의 달성여부로 % 값 산정, 하위 100% 시 자동 완료판정 // progress percentage calculated by subTasks' complete or not, automatically change isComplete into true when subTasks are all done
+  String url; // 추가정보 : URL // additional information : URL
+
 
   // 생성자 // constructor
   TodoItem({
     required this.title,
+    this.description = '',
     this.priority = 0,
     this.location = '',
     required this.relatedTasks,
@@ -27,6 +31,7 @@ class TodoItem {
     this.isCompleted = false,
     this.parent,
     this.progress = 0.0, // 자식이 없다면 UI에서 프로그레스를 비활성화하는 방법도 생각중 // considering deactivate this option in UI when subtasks == 0
+    this.url = '',
   });
 
 
@@ -38,6 +43,9 @@ class TodoItem {
   // 자식이 있는 경우, 자신의 progress 상태 갱신 // if subtask exsists, update it's progress
   void updateProgress() {
     if (this.subTasks.length == 0) {
+      if(this.isCompleted == true)
+        this.progress = 1.0;
+      else this.progress = 0.0;
       return;
     }
     else {
@@ -107,7 +115,7 @@ class _TodoListState extends State<TodoList> {
       children: [
         ListTile(
           contentPadding: EdgeInsets.only(left:16.0 + depth * 16.0), // 하위작업 들여쓰기용 패딩 // inset padding for subtasks
-          title: Row(
+          title: Row( // 필요한 속성이 있는 경우 제목 옆에 간략하게 표시
             children: [
               Text(item.title),
               SizedBox(width:8.0),
@@ -119,6 +127,7 @@ class _TodoListState extends State<TodoList> {
             onChanged: (bool? value) {
               setState(() {
                 item.isCompleted = value!;
+                item.updateProgress();
               });
             },
           ),
@@ -128,11 +137,21 @@ class _TodoListState extends State<TodoList> {
               barrierDismissible: true,
               builder: (BuildContext context){
                 return AlertDialog(
-                  title: Text("Attributes"),
+                  title: Text(item.title + "Attributes"),
                   content: Column(
                     children: [
                       Text("Show here editable attrs, Description, Hyperlinks, File + preview"),
                       // 여기에 각종 속성 보기 및 수정작업 // attrs and editing features here
+                      Text("Description : " + item.description), // 수정 가능한 블럭으로 바꿔야 함, 이것 말고 나머지들도 // needed to be change into editable block, others also
+                      Text("Priority : " + item.priority.toString()),
+                      Text("Tags : " + item.tags.toString()),
+                      Text("Location : " + item.location.toString()),
+                      Text("Related Tasks : " + item.relatedTasks.toString()), // 직접 클릭하는걸로 변경해야 보일듯 // it would visable if create option changes into clickable object
+                      Text("Progress : " + (item.progress * 100).toString() + "%"),
+                      SizedBox(height: 10, ),
+                      Container(height: 10,color: Colors.black26,),
+                      Text("Additional Informations",style: TextStyle(fontSize: 20,)),
+
 
                     ],
                   ),

@@ -96,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             labelText: 'Task name',
                           )
                       ),
-                      SizedBox(height: 10,),
+                      SizedBox(height: 10, width: 100,),
                       TextField(
                         controller: TaskPriorController,
                           decoration: InputDecoration(
@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             labelText: 'Priority(need to be change into number input)',
                           )
                       ),
-                      SizedBox(height: 10,),
+                      SizedBox(height: 10, width: 100,),
                       TextField(
                         controller: TaskLocController,
                           decoration: InputDecoration(
@@ -112,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             labelText: 'location(optional)',
                           )
                       ),
-                      SizedBox(height: 10,),
+                      SizedBox(height: 10, width: 100,),
                       TextField(
                         controller: TaskRelateController,
                           decoration: InputDecoration(
@@ -120,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             labelText: 'related Tasks(optional)(need to be change into task select box)',
                           )
                       ),
-                      SizedBox(height: 10,),
+                      SizedBox(height: 10, width: 100,),
                       TextField(
                         controller: TaskTagController,
                           decoration: InputDecoration(
@@ -129,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           )
                       ),
                       // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
-                      SizedBox(height: 10,),
+                      SizedBox(height: 10, width: 100,),
                     ],
                   ),
                 ),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'requirement_1.dart';
+import 'requirement_2.dart';
 
-TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', relatedTasks: [], tags: [], subTasks: [],);
+int ID_num = 0; // 작업에 각각 부여하는 개별 아이디
+
+TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', relatedTasks: [], tags: [], subTasks: [], url: "http://www.naver.com");
 TodoItem temp2 = TodoItem(title: '하위 : 설거지하기', relatedTasks: [], tags: [], subTasks: [],);
 TodoItem temp3 = TodoItem(title: '하위 : 개발환경 설정하기', relatedTasks: [], tags: [], subTasks: [],);
 TodoItem temp4 = TodoItem(title: '하위2 : 컴퓨터 켜기', relatedTasks: [], tags: [], subTasks: [],);
@@ -23,6 +26,10 @@ void main() {
   print('tlqkf');
   temp3.addItem(temp4);
   temp3.addItem(temp5);
+
+
+  WidgetsFlutterBinding.ensureInitialized();
+  requestPermissions();
 
   runApp(const MyApp());
 }

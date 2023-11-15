@@ -1,13 +1,13 @@
 // ignore_for_file: avoid_print
 
-export 'package:alarm/model/alarm_settings.dart';
+export 'package:se_project/alarm_settings.dart';
 import 'dart:async';
 
-import 'package:alarm/model/alarm_settings.dart';
-import 'package:alarm/src/ios_alarm.dart';
-import 'package:alarm/src/android_alarm.dart';
-import 'package:alarm/service/notification.dart';
-import 'package:alarm/service/storage.dart';
+import 'package:se_project/alarm_settings.dart';
+import 'package:se_project/ios_alarm.dart';
+import 'package:se_project/android_alarm.dart';
+import 'package:se_project/notification.dart';
+import 'package:se_project/storage.dart';
 import 'package:flutter/foundation.dart';
 
 /// Custom print function designed for Alarm plugin.
@@ -29,6 +29,7 @@ class Alarm {
   /// app termination.
   ///
   /// Set [showDebugLogs] to `false` to hide all the logs from the plugin.
+  /// 알람 서비스를 초기화하고, 앱 종료 전에 설정된 알람을 다시 예약한다. 디버그 로그 표시 여부를 선택할 수 있다.
   static Future<void> init({bool showDebugLogs = true}) async {
     alarmPrint = (String? message, {int? wrapWidth}) {
       if (kDebugMode && showDebugLogs) {
@@ -46,6 +47,7 @@ class Alarm {
 
   /// Checks if some alarms were set on previous session.
   /// If it's the case then reschedules them.
+  /// 이전 세션에 설정된 알람이 있는지 확인하고, 필요한 경우 다시 예약
   static Future<void> checkAlarm() async {
     final alarms = AlarmStorage.getSavedAlarms();
 
@@ -66,6 +68,8 @@ class Alarm {
   ///
   /// Also, schedules notification if [notificationTitle] and [notificationBody]
   /// are not null nor empty.
+  /// 주어진 AlarmSettings에 따라 알람을 예약한다. 알람 시간과 동일한 새 알람이 기존 알람을 대체한다.
+  /// notificationTitle과 notificationBody가 null이 아니면 알람과 함께 알림도 예약된다.
   static Future<bool> set({required AlarmSettings alarmSettings}) async {
     if (!alarmSettings.assetAudioPath.contains('.')) {
       throw AlarmException(
@@ -105,12 +109,13 @@ class Alarm {
     if (iOS) {
       return IOSAlarm.setAlarm(
         alarmSettings,
-        () => ringStream.add(alarmSettings),
+            () => ringStream.add(alarmSettings),
       );
-    } else if (android) {
+    } else
+    if (android) {
       return await AndroidAlarm.set(
         alarmSettings,
-        () => ringStream.add(alarmSettings),
+            () => ringStream.add(alarmSettings),
       );
     }
 
@@ -126,12 +131,13 @@ class Alarm {
   ///
   /// [body] default value is `You killed the app. Please reopen so your alarm can ring.`
   static Future<void> setNotificationOnAppKillContent(
-    String title,
-    String body,
-  ) =>
+      String title,
+      String body,
+      ) =>
       AlarmStorage.setNotificationContentOnAppKill(title, body);
 
   /// Stops alarm.
+  /// 지정된 ID의 알람을 중지한다.
   static Future<bool> stop(int id) async {
     await AlarmStorage.unsaveAlarm(id);
 
@@ -141,6 +147,7 @@ class Alarm {
   }
 
   /// Stops all the alarms.
+  /// 모든 알람을 중지한다.
   static Future<void> stopAll() async {
     final alarms = AlarmStorage.getSavedAlarms();
 
@@ -150,13 +157,16 @@ class Alarm {
   }
 
   /// Whether the alarm is ringing.
+  /// 지정된 ID의 알람이 울리고 있는지 확인한다.
   static Future<bool> isRinging(int id) async =>
       iOS ? await IOSAlarm.checkIfRinging(id) : AndroidAlarm.isRinging;
 
   /// Whether an alarm is set.
+  /// 설정된 알람이 있는지 확인한다.
   static bool hasAlarm() => AlarmStorage.hasAlarm();
 
   /// Returns alarm by given id. Returns null if not found.
+  /// 주어진 ID의 알람을 반환한다. 찾을 수 없는 경우 null을 반환
   static AlarmSettings? getAlarm(int id) {
     List<AlarmSettings> alarms = AlarmStorage.getSavedAlarms();
 
@@ -169,6 +179,7 @@ class Alarm {
   }
 
   /// Returns all the alarms.
+  /// 저장된 모든 알람을 반환한다.
   static List<AlarmSettings> getAlarms() => AlarmStorage.getSavedAlarms();
 }
 

@@ -5,19 +5,19 @@ import 'requirement_2.dart';
 
 int ID_num = 0; // 작업에 각각 부여하는 개별 아이디
 
-TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', relatedTasks: [], tags: [], subTasks: [], url: "http://www.naver.com");
-TodoItem temp2 = TodoItem(title: '하위 : 설거지하기', relatedTasks: [], tags: [], subTasks: [],);
-TodoItem temp3 = TodoItem(title: '하위 : 개발환경 설정하기', relatedTasks: [], tags: [], subTasks: [],);
-TodoItem temp4 = TodoItem(title: '하위2 : 컴퓨터 켜기', relatedTasks: [], tags: [], subTasks: [],);
-TodoItem temp5 = TodoItem(title: '하위2 : 크롬 켜기', relatedTasks: [], tags: [], subTasks: [],);
+TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', relatedTasks: [], tags: [], subTasks: [], superTask: null, url: "http://www.naver.com");
+TodoItem temp2 = TodoItem(title: '하위 : 설거지하기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
+TodoItem temp3 = TodoItem(title: '하위 : 개발환경 설정하기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
+TodoItem temp4 = TodoItem(title: '하위2 : 컴퓨터 켜기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
+TodoItem temp5 = TodoItem(title: '하위2 : 크롬 켜기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
 
 
 
 // 할 일 리스트(예제, 트리구조로 변경 필요) // Todo List(example, need to be changed into tree from)
 final List<TodoItem> sampleTasks = [
-  TodoItem(title: '청소하기', subTasks: [temp1, temp2,], relatedTasks: [], tags: [],),
-  TodoItem(title: '코드 작성하기', subTasks: [temp3,], relatedTasks: [], tags: [],),
-  TodoItem(title: '운동하기', relatedTasks: [], tags: [], subTasks: [],),
+  TodoItem(title: '청소하기', subTasks: [temp1, temp2,], superTask: null, relatedTasks: [], tags: [],),
+  TodoItem(title: '코드 작성하기', subTasks: [temp3,], superTask: null, relatedTasks: [], tags: [],),
+  TodoItem(title: '운동하기', relatedTasks: [], superTask: null, tags: [], subTasks: [],),
 ];
 
 
@@ -148,7 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         // 작업 생성 시도
                         setState(() {
                           sampleTasks.add(TodoItem(title: TaskNameController.text, relatedTasks: [], // 임시 : 연관작업에 컨트롤러 연동시키기 // temp : allocate related job into controller
-                              tags: TaskTagController.text.split(","), subTasks: [], location: TaskLocController.text));
+                              tags: TaskTagController.text.split(","), subTasks: [], superTask: null, location: TaskLocController.text));
                         });
 
 

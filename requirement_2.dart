@@ -29,7 +29,7 @@ Future<void> requestPermissions() async {
 }
 
 // 파일 업로드 함수 // file upload
-Future<void> pickAndSaveFileLocally(TodoItem item) async {
+Future<bool> pickAndSaveFileLocally(TodoItem item) async {
   FilePickerResult? result = await FilePicker.platform.pickFiles();
 
   if (result != null) {
@@ -61,9 +61,12 @@ Future<void> pickAndSaveFileLocally(TodoItem item) async {
 
     // 파일명 저장
     item.fileName = pickedFile.name;
+
+    return true;
   } else {
     // 사용자가 파일 선택을 취소한 경우 // if user cancels process
     print('No file selected.');
+    return false;
   }
 }
 

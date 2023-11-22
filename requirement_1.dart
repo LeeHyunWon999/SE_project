@@ -1,5 +1,7 @@
 import 'dart:ffi';
 
+import 'package:fluttertoast/fluttertoast.dart';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'requirement_2.dart';
@@ -20,7 +22,7 @@ class TodoItem {
   List<TodoItem> relatedTasks; // 속성 : 연관작업목록 // attr(optional)
   List<String> tags; // 속성 : 태그 // attr(optional)
   List<TodoItem> subTasks; // 하위 작업들은 여기에 들어가는 구조 // subtasks stored here
-  TodoItem? superTask; // 갱신용 상위작업 // superTask for refresh
+  TodoItem? superTask; // 갱신용 상위작업, 인덱스 순서대로 상위 작업 명시 // superTask for refresh, the upper tree gets the later index
   bool isCompleted; // 완료되었는가? // work for higher task's complete progress
   double
       progress; // 하위 목록의 달성여부로 % 값 산정, 하위 100% 시 자동 완료판정 // progress percentage calculated by subTasks' complete or not, automatically change isComplete into true when subTasks are all done
@@ -59,7 +61,7 @@ class TodoItem {
         // Todo : 자식의 완료여부를 기준으로 상태 갱신 // update progress based on subtasks' completion
         double temp_progress = 0.0;
         for(int i = 0; i < subTasks.length; i++) {
-          temp_progress += subTasks[i].isCompleted == true ? 1 : 0;
+          temp_progress += subTasks[i].progress;
         }
         this.progress = temp_progress / subTasks.length;
       }
@@ -94,6 +96,7 @@ class TodoItem {
   // 이미 존재하는 아이템을 자신의 하위 아이템에 추가 // add existing item into its subtask
   void addItem(TodoItem tempItem) {
     subTasks.add(tempItem);
+    tempItem.superTask = this;
   }
 
   // 자신의 속성 수정(완료상태와 하위목록은 따로 빼기) // edit its attr(except isCompleted and subTasks)
@@ -223,11 +226,15 @@ class _TodoListState extends State<TodoList> {
                       if(await pickAndSaveFileLocally(item) == true) {
                         print("업로드에 성공했습니다.");
 
-                        setState(() {
-                          fileName_temp = item.fileName;
-                          print("$fileName_temp");
-                          print("시발2");
-                        });
+                        // setState(() {
+                        //   fileName_temp = item.fileName;
+                        //   print("$fileName_temp");
+                        //   print("시발2");
+                        // });
+
+                        setState((){
+                          updateFileName(item);});
+
 
                       } else print("업로드에 실패했습니다.");
                     },
@@ -329,7 +336,7 @@ class _TodoListState extends State<TodoList> {
                                 Navigator.of(context)
                                     .pop(); //창 닫기 // close Dialog with Create tasks
                                 // 작업 생성 시도
-                                createTask();
+                                createTask(item, TaskNameController, TaskTagController, TaskLocController, TaskPriorController);
                               },
                               child: Text("Create"),
                             ),
@@ -386,10 +393,11 @@ class _TodoListState extends State<TodoList> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   // 삭제작업 진행
-                                  removeTask();
+                                  removeTask(items, item);
                                   Navigator.of(parentDialogContext)
                                       .pop();
                                   Navigator.of(context).pop();
+                                  Fluttertoast.showToast(msg: "Deleted Task!");
                                 },
                                 child: Text("Yes"),
                               ),
@@ -420,6 +428,7 @@ class _TodoListState extends State<TodoList> {
       TextEditingController TaskNameController,
       TextEditingController TaskTagController,
       TextEditingController TaskLocController,
+      TextEditingController TaskPriorController,
       ) {
     setState(() {
       item.subTasks.add(TodoItem(
@@ -431,14 +440,18 @@ class _TodoListState extends State<TodoList> {
           subTasks: [],
           superTask: item,
           location:
-          TaskLocController.text));
+          TaskLocController.text,
+          priority: TaskPriorController.text.isEmpty ? 0 : int.parse(TaskPriorController.text)));
+      item.updateProgress();
     });
+    Fluttertoast.showToast(msg: "Created Task!");
   }
 
   // 상태변경 콜백 메소드 : 작업삭제 // setState callback : remove task
   void removeTask(List<TodoItem> items, TodoItem item) {
     setState(() {
       items.remove(item);
+      item.updateProgress();
     });
   }
 
@@ -596,20 +609,3 @@ class _TodoListState extends State<TodoList> {
   }
 }
 
-
-class customCheckBox extends StatelessWidget {
-  final VoidCallback? onPressedCallback;
-
-  customCheckBox({this.onPressedCallback});
-
-  @override
-  Widget build(BuildContext context) {
-    return Checkbox(
-      value: false,
-      onChanged: (){
-        // 버튼 눌릴때 콜백 호출
-        onPressedCallback.call();
-      },
-    );
-  }
-}

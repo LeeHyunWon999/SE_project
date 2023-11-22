@@ -61,8 +61,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: TodoList(items: sampleTasks),
+      body: TodoList(items: sampleTasks, ),
       bottomNavigationBar: TextButton(
         child: Text("Create New Root Tasks"),
         onPressed: (){

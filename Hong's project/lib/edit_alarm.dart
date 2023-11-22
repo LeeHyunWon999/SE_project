@@ -16,6 +16,7 @@ class ExampleAlarmEditScreen extends StatefulWidget {
 class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
   // loading, creating, selectedDateTime ... assetAudio 등 다양한 상태 변수들
   bool loading = false;
+  bool isAlarmSaved = false;
 
   late bool creating;
   late DateTime selectedDateTime;
@@ -23,6 +24,7 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
   late bool vibrate;
   late bool volumeMax;
   late bool showNotification;
+  late bool complexNotification;
   late String assetAudio;
 
   @override
@@ -37,12 +39,14 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
       vibrate = true;
       volumeMax = false;
       showNotification = true;
+      complexNotification = false;
       assetAudio = 'assets/marimba.mp3';
     } else {
       selectedDateTime = widget.alarmSettings!.dateTime;
       loopAudio = widget.alarmSettings!.loopAudio;
       vibrate = widget.alarmSettings!.vibrate;
       volumeMax = widget.alarmSettings!.volumeMax;
+      complexNotification = widget.alarmSettings!.complexNotification;
       showNotification = widget.alarmSettings!.notificationTitle != null &&
           widget.alarmSettings!.notificationTitle!.isNotEmpty &&
           widget.alarmSettings!.notificationBody != null &&
@@ -97,6 +101,7 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
       loopAudio: loopAudio,
       vibrate: vibrate,
       volumeMax: volumeMax,
+      complexNotification: complexNotification,
       notificationTitle: showNotification ? 'Alarm example' : null,
       notificationBody: showNotification ? 'Your alarm ($id) is ringing' : null,
       assetAudioPath: assetAudio,
@@ -107,9 +112,15 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
   void saveAlarm() {    // 설정된 알람을 저장한다. 비동기로 'Alarm.set'을 호출하고, 성공적으로 저장되면 화면을 닫는다.
     setState(() => loading = true);
     Alarm.set(alarmSettings: buildAlarmSettings()).then((res) {
-      if (res) Navigator.pop(context, true);
+      if (res) {
+        isAlarmSaved = true; // Set the flag to true when alarm is saved.
+        Navigator.pop(context, true); // Close the screen if the alarm is saved.
+      } else {
+        isAlarmSaved = false; // Set the flag to false if save failed.
+        // Optionally show an error message or take any necessary actions.
+      }
+      setState(() => loading = false);
     });
-    setState(() => loading = false);
   }
 
   void deleteAlarm() {    // 기존 알람을 삭제. 비동기로 'Alarm.set'을 호출하고, 성공적으로 삭제되면 화면을 닫는다.
@@ -122,157 +133,174 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
   Widget build(BuildContext context) {    // UI를 빌드하는 메서드. 'Column' 위젯을 사용하여 화면 구성요소를 세로로 배열
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    "Cancel",
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge!
+                        .copyWith(color: Colors.blueAccent),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => {saveAlarm,
+                    print("save")
+                  },
+                  child: loading
+                      ? const CircularProgressIndicator()
+                      : Text(
+                    "Save",
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge!
+                        .copyWith(color: Colors.blueAccent),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              getDay(),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium!
+                  .copyWith(color: Colors.blueAccent.withOpacity(0.8)),
+            ),
+            RawMaterialButton(
+              onPressed: pickTime,
+              fillColor: Colors.grey[200],
+              child: Container(
+                margin: const EdgeInsets.all(20),
                 child: Text(
-                  "Cancel",
+                  TimeOfDay.fromDateTime(selectedDateTime).format(context),
                   style: Theme.of(context)
                       .textTheme
-                      .titleLarge!
+                      .displayMedium!
                       .copyWith(color: Colors.blueAccent),
                 ),
               ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Loop alarm audio',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Switch(
+                  value: loopAudio,
+                  onChanged: (value) => setState(() => loopAudio = value),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Vibrate',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Switch(
+                  value: vibrate,
+                  onChanged: (value) => setState(() => vibrate = value),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'System volume max',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Switch(
+                  value: volumeMax,
+                  onChanged: (value) => setState(() => volumeMax = value),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Show notification',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Switch(
+                  value: showNotification,
+                  onChanged: (value) => setState(() => showNotification = value),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Complex notification',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Switch(
+                  value: complexNotification,
+                  onChanged: (value) => setState(() => complexNotification = value),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Sound',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                DropdownButton(
+                  value: assetAudio,
+                  items: const [
+                    DropdownMenuItem<String>(
+                      value: 'assets/marimba.mp3',
+                      child: Text('Marimba'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'assets/nokia.mp3',
+                      child: Text('Nokia'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'assets/mozart.mp3',
+                      child: Text('Mozart'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'assets/star_wars.mp3',
+                      child: Text('Star Wars'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'assets/one_piece.mp3',
+                      child: Text('One Piece'),
+                    ),
+                  ],
+                  onChanged: (value) => setState(() => assetAudio = value!),
+                ),
+              ],
+            ),
+            if (!creating)
               TextButton(
-                onPressed: saveAlarm,
-                child: loading
-                    ? const CircularProgressIndicator()
-                    : Text(
-                  "Save",
+                onPressed: deleteAlarm,
+                child: Text(
+                  'Delete Alarm',
                   style: Theme.of(context)
                       .textTheme
-                      .titleLarge!
-                      .copyWith(color: Colors.blueAccent),
+                      .titleMedium!
+                      .copyWith(color: Colors.red),
                 ),
               ),
-            ],
-          ),
-          Text(
-            getDay(),
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium!
-                .copyWith(color: Colors.blueAccent.withOpacity(0.8)),
-          ),
-          RawMaterialButton(
-            onPressed: pickTime,
-            fillColor: Colors.grey[200],
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              child: Text(
-                TimeOfDay.fromDateTime(selectedDateTime).format(context),
-                style: Theme.of(context)
-                    .textTheme
-                    .displayMedium!
-                    .copyWith(color: Colors.blueAccent),
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Loop alarm audio',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Switch(
-                value: loopAudio,
-                onChanged: (value) => setState(() => loopAudio = value),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Vibrate',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Switch(
-                value: vibrate,
-                onChanged: (value) => setState(() => vibrate = value),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'System volume max',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Switch(
-                value: volumeMax,
-                onChanged: (value) => setState(() => volumeMax = value),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Show notification',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Switch(
-                value: showNotification,
-                onChanged: (value) => setState(() => showNotification = value),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Sound',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              DropdownButton(
-                value: assetAudio,
-                items: const [
-                  DropdownMenuItem<String>(
-                    value: 'assets/marimba.mp3',
-                    child: Text('Marimba'),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'assets/nokia.mp3',
-                    child: Text('Nokia'),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'assets/mozart.mp3',
-                    child: Text('Mozart'),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'assets/star_wars.mp3',
-                    child: Text('Star Wars'),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'assets/one_piece.mp3',
-                    child: Text('One Piece'),
-                  ),
-                ],
-                onChanged: (value) => setState(() => assetAudio = value!),
-              ),
-            ],
-          ),
-          if (!creating)
-            TextButton(
-              onPressed: deleteAlarm,
-              child: Text(
-                'Delete Alarm',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium!
-                    .copyWith(color: Colors.red),
-              ),
-            ),
-          const SizedBox(),
-        ],
+            const SizedBox(),
+          ],
+        ),
       ),
     );
   }

@@ -28,6 +28,8 @@ class AlarmSettings {
   /// 참일 경우, 알람이 울릴 때 시스템 볼륨을 최대로 설정
   final bool volumeMax;
 
+  final bool complexNotification;
+
   /// Duration, in seconds, over which to fade the alarm ringtone.
   /// Set to 0.0 by default, which means no fade.
   /// 알람 벨소리가 점차 커지는 데 걸리는 시간
@@ -75,6 +77,7 @@ class AlarmSettings {
     hash = hash ^ (notificationBody?.hashCode ?? 0);
     hash = hash ^ enableNotificationOnKill.hashCode;
     hash = hash ^ stopOnNotificationOpen.hashCode;
+    hash = hash ^ complexNotification.hashCode;
     hash = hash & 0x3fffffff;
 
     return hash;
@@ -98,6 +101,7 @@ class AlarmSettings {
     this.enableNotificationOnKill = true,
     this.stopOnNotificationOpen = false,
     this.androidFullScreenIntent = true,
+    this.complexNotification = false,
   });
 
   /// Constructs an `AlarmSettings` instance from the given JSON data.

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:se_project/storage.dart';
+import 'package:se_project/alarm.dart';
+import 'package:se_project/home.dart';
 
 import 'requirement_1.dart';
 import 'requirement_2.dart';
@@ -21,7 +24,7 @@ final List<TodoItem> sampleTasks = [
 ];
 
 
-void main() {
+void main() async {
   // 선언 외의 동작은 여기서 설정 // Actions other than settings set here
   print('tlqkf');
   temp3.addItem(temp4);
@@ -29,6 +32,8 @@ void main() {
 
 
   WidgetsFlutterBinding.ensureInitialized();
+  await AlarmStorage.init();
+  await Alarm.init(showDebugLogs : true);
   requestPermissions();
 
   runApp(const MyApp());

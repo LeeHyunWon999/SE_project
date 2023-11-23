@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 // 이 화면은 사용자가 알람을 설정하고 조정할 수 있는 여러 옵션을 제공.
 class ExampleAlarmEditScreen extends StatefulWidget {
   final AlarmSettings? alarmSettings; // 'alarmSetting' : 기존 알람 설정을 받아올 수 있는 선택적 매개변수
+  final Function(DateTime)? onSave; // Callback 함수 추가
 
-  const ExampleAlarmEditScreen({Key? key, this.alarmSettings}) // State<ExampleAlarmEditScreen> 타입의 상태 클래스를 반환하는 createState 메서드를 오버라이드
+  const ExampleAlarmEditScreen({Key? key, this.alarmSettings, this.onSave,}) // State<ExampleAlarmEditScreen> 타입의 상태 클래스를 반환하는 createState 메서드를 오버라이드
       : super(key: key);
 
   @override
@@ -53,6 +54,10 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
           widget.alarmSettings!.notificationBody!.isNotEmpty;
       assetAudio = widget.alarmSettings!.assetAudioPath;
     }
+  }
+
+  void onAlarmSaved(DateTime alarmTime){
+    widget.onSave?.call(alarmTime);
   }
 
   String getDay() {   // 선택된 날짜가 현재 날짜와 얼마나 덜어져 있는지를 계산하여 문자열로 반환
@@ -109,18 +114,15 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
     return alarmSettings;
   }
 
-  void saveAlarm() {    // 설정된 알람을 저장한다. 비동기로 'Alarm.set'을 호출하고, 성공적으로 저장되면 화면을 닫는다.
+  void saveAlarm() { // 설정된 알람을 저장한다. 비동기로 'Alarm.set'을 호출하고, 성공적으로 저장되면 화면을 닫는다.
     setState(() => loading = true);
     Alarm.set(alarmSettings: buildAlarmSettings()).then((res) {
+      print("Alarm Setting");
       if (res) {
-        isAlarmSaved = true; // Set the flag to true when alarm is saved.
-        Navigator.pop(context, true); // Close the screen if the alarm is saved.
-      } else {
-        isAlarmSaved = false; // Set the flag to false if save failed.
-        // Optionally show an error message or take any necessary actions.
-      }
-      setState(() => loading = false);
+        widget.onSave?.call(selectedDateTime);
+        Navigator.of(context).pop();}// Navigator.pop(context, true);
     });
+    setState(() => loading = false);
   }
 
   void deleteAlarm() {    // 기존 알람을 삭제. 비동기로 'Alarm.set'을 호출하고, 성공적으로 삭제되면 화면을 닫는다.
@@ -151,8 +153,8 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => {saveAlarm,
-                    print("save")
+                  onPressed: () => {saveAlarm(),
+                    print("save"),
                   },
                   child: loading
                       ? const CircularProgressIndicator()

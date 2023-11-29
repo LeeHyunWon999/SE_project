@@ -83,104 +83,117 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: TodoList(items: sampleTasks),
-      bottomNavigationBar: TextButton(
-        child: Text("Create New Root Tasks"),
-        onPressed: (){
+      bottomNavigationBar: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton(
+            child: Text("Change the view"),
+            onPressed: (){
+              // 다른 뷰 선택 가능한 창 띄워주기 // presenting another window that choose the view
 
-          // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
-          final TaskNameController = TextEditingController();
-          final TaskPriorController = TextEditingController();
-          final TaskLocController = TextEditingController();
-          final TaskRelateController = TextEditingController();
-          final TaskTagController = TextEditingController();
-          // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
-          // myController.text 형식으로 접근 // access fields by like myController.text
+            },
+          ),
+          TextButton(
+            child: Text("Create New Root Tasks"),
+            onPressed: (){
 
-          showDialog(
-            context: context,
-            barrierDismissible: true,
-            builder: (BuildContext context){
-              return AlertDialog(
-                title: Icon(Icons.add),
-                content: Container( // 너비지정용 // setting width by this
-                  width: 600,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("creating root task UI"),
-                      TextField(
-                        controller: TaskNameController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Task name',
-                          )
+              // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
+              final TaskNameController = TextEditingController();
+              final TaskPriorController = TextEditingController();
+              final TaskLocController = TextEditingController();
+              final TaskRelateController = TextEditingController();
+              final TaskTagController = TextEditingController();
+              // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
+              // myController.text 형식으로 접근 // access fields by like myController.text
+
+              showDialog(
+                context: context,
+                barrierDismissible: true,
+                builder: (BuildContext context){
+                  return AlertDialog(
+                    title: Icon(Icons.add),
+                    content: Container( // 너비지정용 // setting width by this
+                      width: 600,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("creating root task UI"),
+                          TextField(
+                            controller: TaskNameController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Task name',
+                              )
+                          ),
+                          SizedBox(height: 10, width: 100,),
+                          TextField(
+                            controller: TaskPriorController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Priority(need to be change into number input)',
+                              )
+                          ),
+                          SizedBox(height: 10, width: 100,),
+                          TextField(
+                            controller: TaskLocController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'location(optional)',
+                              )
+                          ),
+                          SizedBox(height: 10, width: 100,),
+                          TextField(
+                            controller: TaskRelateController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'related Tasks(optional)(need to be change into task select box)',
+                              )
+                          ),
+                          SizedBox(height: 10, width: 100,),
+                          TextField(
+                            controller: TaskTagController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'tags(optional)(no need to be change but need to parsing to use)',
+                              )
+                          ),
+                          // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
+                          SizedBox(height: 10, width: 100,),
+                        ],
                       ),
-                      SizedBox(height: 10, width: 100,),
-                      TextField(
-                        controller: TaskPriorController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Priority(need to be change into number input)',
-                          )
+                    ),
+                    actions: <Widget>[
+                      Container(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); //창 닫기 // close Dialog with Create tasks
+                            // 작업 생성 시도
+                            setState(() {
+                              sampleTasks.add(TodoItem(title: TaskNameController.text, relatedTasks: [], // 임시 : 연관작업에 컨트롤러 연동시키기 // temp : allocate related job into controller
+                                  tags: TaskTagController.text.split(","), subTasks: [], superTask: null, location: TaskLocController.text));
+                            });
+
+
+                          },
+                          child: Text("Create"),
+                        ),
                       ),
-                      SizedBox(height: 10, width: 100,),
-                      TextField(
-                        controller: TaskLocController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'location(optional)',
-                          )
+                      Container(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); //창 닫기 // close Dialog with cancel
+                          },
+                          child: Text("Cancel"),
+                        ),
                       ),
-                      SizedBox(height: 10, width: 100,),
-                      TextField(
-                        controller: TaskRelateController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'related Tasks(optional)(need to be change into task select box)',
-                          )
-                      ),
-                      SizedBox(height: 10, width: 100,),
-                      TextField(
-                        controller: TaskTagController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'tags(optional)(no need to be change but need to parsing to use)',
-                          )
-                      ),
-                      // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
-                      SizedBox(height: 10, width: 100,),
                     ],
-                  ),
-                ),
-                actions: <Widget>[
-                  Container(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); //창 닫기 // close Dialog with Create tasks
-                        // 작업 생성 시도
-                        setState(() {
-                          sampleTasks.add(TodoItem(title: TaskNameController.text, relatedTasks: [], // 임시 : 연관작업에 컨트롤러 연동시키기 // temp : allocate related job into controller
-                              tags: TaskTagController.text.split(","), subTasks: [], superTask: null, location: TaskLocController.text));
-                        });
-
-
-                      },
-                      child: Text("Create"),
-                    ),
-                  ),
-                  Container(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); //창 닫기 // close Dialog with cancel
-                      },
-                      child: Text("Cancel"),
-                    ),
-                  ),
-                ],
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ],
       ),
     );
   }

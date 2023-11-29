@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "647470475554",
+    "firebase_url": "https://se-todoapp-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "se-todoapp",
+    "storage_bucket": "se-todoapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647470475554:android:6521de6e43322248209d7b",
+        "android_client_info": {
+          "package_name": "com.example.FlutterProject.test_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "647470475554-vrobrosp54b85s13q6mmsg2rc80qomgi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.FlutterProject.test_flutter",
+            "certificate_hash": "1f6ff7fb1df91b2bab7b863ffb735dec381206c4"
+          }
+        },
+        {
+          "client_id": "647470475554-qi3ro055j6e4qggtb326ot9toucti12q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXBZ6U1WO7sKi3CFKMRWYIxPEiicEJu3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "647470475554-qi3ro055j6e4qggtb326ot9toucti12q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "647470475554-64sj3lfc51t8dl8ss8jfululp5c1csaj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.FlutterProject.testFlutter"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

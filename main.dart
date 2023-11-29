@@ -1,9 +1,13 @@
+//import 'dart:js_interop';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
 import 'package:flutter/material.dart';
 
+// 직접 만든 파일들 // files we created
 import 'main_tree.dart';
 import 'requirement_1.dart';
 import 'requirement_2.dart';
@@ -70,9 +74,44 @@ class _MyHomePageState extends State<MyHomePage> {
           Text('Todo App'),
           TextButton(
             child: Text('Login'),
-            onPressed: (){
-              // 이거 누르면 메인트리 화면으로 이동?
-              Navigator.push(context, MaterialPageRoute(builder: (context) => TodoTree()));
+            onPressed: () async{
+              // 이거 누르면 메인트리 화면으로 이동 // move into view page(tree)
+              // 여긴 튜토리얼 페이지 보고 따라하기 // following tutorial
+              // https://cokebi.com/34
+              final _googleSignIn = GoogleSignIn(
+                clientId: '647470475554-qi3ro055j6e4qggtb326ot9toucti12q.apps.googleusercontent.com',
+              );
+              final googleAccount = await _googleSignIn.signIn();
+
+              if (googleAccount != null) {
+                final googleAuth = await googleAccount.authentication;
+
+                if (googleAuth.accessToken != null &&
+                    googleAuth.idToken != null) {
+                  try {
+                    await FirebaseAuth.instance.signInWithCredential(GoogleAuthProvider.credential(
+                      idToken: googleAuth.idToken,
+                      accessToken: googleAuth.accessToken,
+                    ));
+                    print("인증성공");
+                    
+                    // 이제 여기서 화면전환하면 된다.
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TodoTree()));
+                  } on FirebaseAuthException catch (e) {
+                    print('문제가 있어 인증에 실패했습니다 : $e');
+                  } catch (e) {
+                    print('문제가 있어 인증에 실패했습니다 : $e');
+                  }
+                } else {
+                  print('문제가 있어 인증에 실패했습니다 : Access 및 Id token이 Null임!! : ${googleAuth.accessToken}, ${googleAuth.idToken}');
+                }
+              } else {
+                print('문제가 있어 인증에 실패했습니다 : googleAccount가 Null임!! : $googleAccount');
+              }
+
+
+              // 임시 : 인증 넣기 전의 화면전환 위치 // original change screen's position before inserting authentication
+              //Navigator.push(context, MaterialPageRoute(builder: (context) => TodoTree()));
             },
           ),
         ],

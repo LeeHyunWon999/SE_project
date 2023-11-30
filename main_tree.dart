@@ -17,19 +17,19 @@ import 'package:test_flutter/requirement_firestore.dart';
 
 int ID_num = 0; // 작업에 각각 부여하는 개별 아이디
 
-TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', relatedTasks: [], tags: [], subTasks: [], superTask: null, url: "http://www.naver.com");
-TodoItem temp2 = TodoItem(title: '하위 : 설거지하기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
-TodoItem temp3 = TodoItem(title: '하위 : 개발환경 설정하기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
-TodoItem temp4 = TodoItem(title: '하위2 : 컴퓨터 켜기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
-TodoItem temp5 = TodoItem(title: '하위2 : 크롬 켜기', relatedTasks: [], tags: [], subTasks: [], superTask: null,);
+TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', tags: [], subTasks: [], superTask: null, url: "http://www.naver.com");
+TodoItem temp2 = TodoItem(title: '하위 : 설거지하기', tags: [], subTasks: [], superTask: null,);
+TodoItem temp3 = TodoItem(title: '하위 : 개발환경 설정하기', tags: [], subTasks: [], superTask: null,);
+TodoItem temp4 = TodoItem(title: '하위2 : 컴퓨터 켜기', tags: [], subTasks: [], superTask: null,);
+TodoItem temp5 = TodoItem(title: '하위2 : 크롬 켜기', tags: [], subTasks: [], superTask: null,);
 
 
 
 // 할 일 리스트(예제, 트리구조로 변경 필요) // Todo List(example, need to be changed into tree from)
 final List<TodoItem> sampleTasks = [
-  TodoItem(title: '청소하기', subTasks: [temp1, temp2,], superTask: null, relatedTasks: [], tags: [],),
-  TodoItem(title: '코드 작성하기', subTasks: [temp3,], superTask: null, relatedTasks: [], tags: [],),
-  TodoItem(title: '운동하기', relatedTasks: [], superTask: null, tags: [], subTasks: [],),
+  TodoItem(title: '청소하기', subTasks: [temp1, temp2,], superTask: null, tags: [],),
+  TodoItem(title: '코드 작성하기', subTasks: [temp3,], superTask: null, tags: [],),
+  TodoItem(title: '운동하기', superTask: null, tags: [], subTasks: [],),
 ];
 
 
@@ -109,12 +109,35 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 로컬에서 sqlite로 할 일 목록 받아오기
   Future<List<TodoItem>> getTask_local() async {
-    List<TodoItem>? tempList = [];
-    Map<String, dynamic> tempMap = await db.query('todolist', ['abc']);
+    // 데이터베이스에서 'todolist' 테이블의 'abc' 컬럼 데이터를 조회합니다.
+    List<Map<String, dynamic>> queryResult = await db.query('todolist', columns: ['abc'],where: 'id = ?', whereArgs: [1]);
+    print(queryResult);
 
-    tempList = List.from(tempMap as Iterable);
+    // 조회된 결과를 TodoItem 객체의 리스트로 변환합니다. (근데 이제 하나만 나오는게 정상임)
+    List<TodoItem> todoItems = [];
+    var jsonData = jsonDecode(queryResult[0]['abc'] as String);
+    if(jsonData is List) {
+      todoItems.addAll(jsonData.map((jsonItem) => TodoItem.fromJson(jsonItem)).toList());
+    }
 
-    return tempList;
+
+
+
+
+
+
+
+    // for (var row in queryResult) {
+    //   // JSON 문자열을 파싱합니다.
+    //   var jsonData = jsonDecode(row['abc'] as String);
+    //
+    //   // JSON 배열의 각 요소를 TodoItem 객체로 변환합니다.
+    //   if (jsonData is List) {
+    //     todoItems.addAll(jsonData.map((jsonItem) => TodoItem.fromJson(jsonItem)).toList());
+    //   }
+    // }
+
+    return todoItems;
   }
 
   // 로컬로 현재 리스트 저장
@@ -164,15 +187,25 @@ class _MyHomePageState extends State<MyHomePage> {
     'todoList' : gettedTasks,
   };
 
+  // 부모 참조를 위한 재귀문 처리용
+  void updateSuperTask(TodoItem item) {
+    for (var task in item.subTasks) {
+      task.superTask = item;
+      updateSuperTask(task);
+    }
+  }
+
   // initState() 내에서 비동기 작업 처리를 위한 함수 // async function for initState()
   void initAsync() async {
     prefs = await SharedPreferences.getInstance(); // 로컬 간단변수 저장용 객체 초기화 // init local saving instance
     firestoreService = FirestoreService(); // 서버 저장용 객체 초기화 // init server saving instance
     // db = await openDatabase('my_db.db'); // 로컬 할일목록 저장용 객체 초기화 // init local list saving instance
 
-    final Future<Database> db = openDatabase(
+    // db 초기화 // init db
+    String path = await getDatabasesPath() + 'my_db.db';
+    db = await openDatabase(
       // 데이터베이스 파일 경로 설정
-      'my_db.db',
+      path,
       onCreate: (db, version) {
         return _createDatabase(db, version);
       },
@@ -190,12 +223,22 @@ class _MyHomePageState extends State<MyHomePage> {
     if (account_email == prefs?.getString('lastUser')) {
       // 같으면 로컬에서 sqlite로 불러온 리스트로 화면에 표시
       gettedTasks = await getTask_local();
+      print("작업이 잘 들어갔는지 확인하겠습니다.");
+      print(gettedTasks?[1].title);
+
+      // 아직 superTask는 처리하지 않았으므로, 이 정보를 재귀적으로 갱신하도록 한다.
+      for(var tasks in gettedTasks!) {
+        updateSuperTask(tasks);
+      }
+
     } else {
       // 다르면 서버에 query 해서 정보 불러오기, sqlite로 로컬에 저장, 마지막 접속한 유저 갱신
       gettedTasks = getTask_server();
       saveLocal(gettedTasks!);
       prefs?.setString('lastUser', account_email!);
     }
+
+    setState((){});
   }
 
 
@@ -256,7 +299,6 @@ class _MyHomePageState extends State<MyHomePage> {
               final TaskNameController = TextEditingController();
               final TaskPriorController = TextEditingController();
               final TaskLocController = TextEditingController();
-              final TaskRelateController = TextEditingController();
               final TaskTagController = TextEditingController();
               // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
               // myController.text 형식으로 접근 // access fields by like myController.text
@@ -298,14 +340,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           SizedBox(height: 10, width: 100,),
                           TextField(
-                            controller: TaskRelateController,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'related Tasks(optional)(need to be change into task select box)',
-                              )
-                          ),
-                          SizedBox(height: 10, width: 100,),
-                          TextField(
                             controller: TaskTagController,
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(),
@@ -324,7 +358,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             Navigator.of(context).pop(); //창 닫기 // close Dialog with Create tasks
                             // 작업 생성 시도
                             setState(() {
-                              gettedTasks?.add(TodoItem(title: TaskNameController.text, relatedTasks: [], // 임시 : 연관작업에 컨트롤러 연동시키기 // temp : allocate related job into controller
+                              gettedTasks?.add(TodoItem(title: TaskNameController.text,
                                   tags: TaskTagController.text.split(","), subTasks: [], superTask: null, location: TaskLocController.text));
                             });
 

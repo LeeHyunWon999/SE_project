@@ -20,7 +20,6 @@ class TodoItem {
   String description; // 작업 설명 // Task description
   int priority; // 속성 : 우선순위(필수) // attr(necessary)
   String location; // 속성 : 수행장소(옵셔널) // attr(optional)
-  List<TodoItem> relatedTasks; // 속성 : 연관작업목록 // attr(optional)
   List<String> tags; // 속성 : 태그 // attr(optional)
   List<TodoItem> subTasks; // 하위 작업들은 여기에 들어가는 구조 // subtasks stored here
   TodoItem? superTask; // 갱신용 상위작업, 인덱스 순서대로 상위 작업 명시 // superTask for refresh, the upper tree gets the later index
@@ -40,7 +39,6 @@ class TodoItem {
     this.description = '',
     this.priority = 0,
     this.location = '',
-    required this.relatedTasks,
     required this.tags,
     required this.subTasks,
     required this.superTask,
@@ -64,7 +62,6 @@ class TodoItem {
       'description' : description,
       'priority' : priority,
       'location' : location,
-      'relatedTasks' : relatedTasks.map((item) => item.ID).toList(),
       'tags' : tags.toList(),
       'subTasks' : subTasks.map((item) => item.toJson()).toList(),
       'superTask' : superTask == null ? -1 : superTask?.ID, // 즉 슈퍼태스크 ID가 -1인 경우는 최상위 작업이므로 적절히 처리할 것
@@ -75,7 +72,36 @@ class TodoItem {
       'fileName' : fileName,
       'isAlarmEnabled' : isAlarmEnabled,
       'alarmTime' : alarmTime?.toIso8601String(),
+      'ID_count' : ID_count,
     };
+  }
+
+  // JSON에서 TodoItem 객체로 변환 (하위 작업 포함)
+  factory TodoItem.fromJson(Map<String, dynamic> json) {
+    TodoItem.ID_count = 0; // 새 리스트가 들어오니 다시 초기화
+    if (TodoItem.ID_count < json['ID_count']) {
+      TodoItem.ID_count = json['ID_count'] + 1; // 가장 큰 녀석의 다음 값으로 설정
+    }
+    return TodoItem(
+      // 다른 속성들을 JSON에서 파싱
+      ID: json['ID'],
+      title: json['title'],
+      description: json['description'],
+      priority: json['priority'],
+      location: json['location'],
+      tags: List<String>.from(json['tags']),
+      subTasks: json['subTasks'] != null
+          ? List<TodoItem>.from(json['subTasks'].map((x) => TodoItem.fromJson(x)))
+          : [],
+      // superTask도 일단은 내버려두고 나중에 리스트 한번에 갱신하면서 진행
+      superTask: null,
+      isCompleted : json['isCompleted'] == 1 ? true : false,
+      progress: json['progress'],
+      url: json['url'],
+      fileName: json['fileName'],
+      isAlarmEnabled: json['isAlarmEnabled'] == 1 ? true : false,
+      alarmTime: json['alarmTime'] == null ? null : DateTime.parse(json['alarmTime']),
+    );
   }
 
   // 자식이 있는 경우, 자신의 progress 상태 갱신 // if subtask exsists, update it's progress
@@ -112,7 +138,6 @@ class TodoItem {
       title: title,
       priority: priority,
       location: location,
-      relatedTasks: relatedTasks,
       tags: tags,
       subTasks: subTasks,
       superTask: this,
@@ -138,7 +163,6 @@ class TodoItem {
     this.title = title;
     this.priority = priority;
     this.location = location;
-    this.relatedTasks = relatedTasks;
     this.tags = tags;
     this.subTasks = subTasks;
   }
@@ -214,7 +238,6 @@ class _TodoListState extends State<TodoList> {
                   Text("Priority : " + item.priority.toString()),
                   Text("Tags : " + item.tags.toString()),
                   Text("Location : " + item.location.toString()),
-                  Text("Related Tasks : " + item.relatedTasks.toString()),
                   // 직접 클릭하는걸로 변경해야 보일듯 // it would visable if create option changes into clickable object
                   Text("Progress : " +
                       (item.progress * 100).toString() +
@@ -461,8 +484,6 @@ class _TodoListState extends State<TodoList> {
     setState(() {
       item.subTasks.add(TodoItem(
           title: TaskNameController.text,
-          relatedTasks: [],
-          // 임시 : 연관작업에 컨트롤러 연동시키기 // temp : allocate related job into controller
           tags: TaskTagController.text
               .split(","),
           subTasks: [],

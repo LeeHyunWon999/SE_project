@@ -96,7 +96,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     print("인증성공");
                     
                     // 이제 여기서 화면전환하면 된다.
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => TodoTree()));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TodoTree(
+                      account_id: googleAccount.displayName,
+                      account_photoUrl: googleAccount.photoUrl,
+                      account_email: googleAccount.email,
+                    )));
                   } on FirebaseAuthException catch (e) {
                     print('문제가 있어 인증에 실패했습니다 : $e');
                   } catch (e) {

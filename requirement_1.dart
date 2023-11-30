@@ -2,6 +2,7 @@
 
 import 'package:fluttertoast/fluttertoast.dart';
 
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'requirement_2.dart';
@@ -28,6 +29,9 @@ class TodoItem {
       progress; // 하위 목록의 달성여부로 % 값 산정, 하위 100% 시 자동 완료판정 // progress percentage calculated by subTasks' complete or not, automatically change isComplete into true when subTasks are all done
   String url; // 추가정보 : URL // additional information : URL
   String fileName; // 추가정보 : 첨부파일 있는 경우 경로 // additional information : file path
+  bool isAlarmEnabled; // 알람이 설정되어 있는가? (이게 있으면 정보 받아올 때 자동 알람 넣기!) // is alarm setted?
+  DateTime? alarmTime; // (알람이 설정된 경우) 알람 시각 정보
+  
 
   // 생성자 // constructor
   TodoItem({
@@ -45,9 +49,33 @@ class TodoItem {
         0.0, // 자식이 없다면 UI에서 프로그레스를 비활성화하는 방법도 생각중 // considering deactivate this option in UI when subtasks == 0
     this.url = '',
     this.fileName = '_',
+    this.isAlarmEnabled = false,
+    this.alarmTime = null,
   }) {
     ID = ID_count;
     ID_count++;
+  }
+
+  // 속성을 저장하기 위한 Json 형태로 바꾸기
+  Map<String, dynamic> toJson() {
+    return {
+      'ID' : ID,
+      'title' : title,
+      'description' : description,
+      'priority' : priority,
+      'location' : location,
+      'relatedTasks' : relatedTasks.map((item) => item.ID).toList(),
+      'tags' : tags.toList(),
+      'subTasks' : subTasks.map((item) => item.toJson()).toList(),
+      'superTask' : superTask == null ? -1 : superTask?.ID, // 즉 슈퍼태스크 ID가 -1인 경우는 최상위 작업이므로 적절히 처리할 것
+      'isCompleted' : isCompleted ? 1 : 0,
+      'progress' : progress,
+      'url' : url,
+      // 파일명까진 저장하지만, 서버에 파일이 직접 저장되지 않음에 유의!
+      'fileName' : fileName,
+      'isAlarmEnabled' : isAlarmEnabled,
+      'alarmTime' : alarmTime?.toIso8601String(),
+    };
   }
 
   // 자식이 있는 경우, 자신의 progress 상태 갱신 // if subtask exsists, update it's progress

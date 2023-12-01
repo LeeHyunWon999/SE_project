@@ -13,52 +13,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'requirement_1.dart';
 import 'requirement_2.dart';
-import 'package:test_flutter/requirement_firestore.dart';
 
 int ID_num = 0; // 작업에 각각 부여하는 개별 아이디
-
-TodoItem temp1 = TodoItem(title: '하위 : 바닥쓸기', tags: [], subTasks: [], superTask: null, url: "http://www.naver.com");
-TodoItem temp2 = TodoItem(title: '하위 : 설거지하기', tags: [], subTasks: [], superTask: null,);
-TodoItem temp3 = TodoItem(title: '하위 : 개발환경 설정하기', tags: [], subTasks: [], superTask: null,);
-TodoItem temp4 = TodoItem(title: '하위2 : 컴퓨터 켜기', tags: [], subTasks: [], superTask: null,);
-TodoItem temp5 = TodoItem(title: '하위2 : 크롬 켜기', tags: [], subTasks: [], superTask: null,);
-
-
-
-// 할 일 리스트(예제, 트리구조로 변경 필요) // Todo List(example, need to be changed into tree from)
-final List<TodoItem> sampleTasks = [
-  TodoItem(title: '청소하기', subTasks: [temp1, temp2,], superTask: null, tags: [],),
-  TodoItem(title: '코드 작성하기', subTasks: [temp3,], superTask: null, tags: [],),
-  TodoItem(title: '운동하기', superTask: null, tags: [], subTasks: [],),
-];
-
-
-// Future<void> main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-//
-//
-//
-//
-//   // 선언 외의 동작은 여기서 설정 // Actions other than settings set here
-//   print('tlqkf');
-//   temp3.addItem(temp4);
-//   temp3.addItem(temp5);
-//
-//
-//   WidgetsFlutterBinding.ensureInitialized();
-//   requestPermissions();
-//
-//   runApp(const MyApp());
-// }
 
 class TodoTree extends StatelessWidget {
   final String? account_id;
   final String? account_photoUrl;
   final String? account_email;
-  //const TodoTree({super.key});
 
   // 생성자 : 사용자 정보 받아오기 // constructor : get user information
   TodoTree({required this.account_id, required this.account_photoUrl, required this.account_email});
@@ -95,7 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final String? account_email;
   List<TodoItem>? gettedTasks = []; // 서버 혹은 로컬로부터 받아온 task
 
-  FirestoreService? firestoreService; // 서버 통신용 객체 // server communicating instance
   SharedPreferences? prefs; // local에 마지막 접속한 사용자 이메일 저장용 객체 // saving last connected user email to local
   var db; // 로컬 db // local db
 
@@ -120,23 +80,6 @@ class _MyHomePageState extends State<MyHomePage> {
       todoItems.addAll(jsonData.map((jsonItem) => TodoItem.fromJson(jsonItem)).toList());
     }
 
-
-
-
-
-
-
-
-    // for (var row in queryResult) {
-    //   // JSON 문자열을 파싱합니다.
-    //   var jsonData = jsonDecode(row['abc'] as String);
-    //
-    //   // JSON 배열의 각 요소를 TodoItem 객체로 변환합니다.
-    //   if (jsonData is List) {
-    //     todoItems.addAll(jsonData.map((jsonItem) => TodoItem.fromJson(jsonItem)).toList());
-    //   }
-    // }
-
     return todoItems;
   }
 
@@ -160,16 +103,41 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // 서버에서 firestore로 할 일 목록 받아오기 : 기본키가 이메일임에 유의!
-  List<TodoItem> getTask_server() {
+  // 서버에서 firestore로 할 일 목록 받아오기 : 구분자가 이메일임에 유의!
+  Future<List<TodoItem>> getTask_server(String userEmail) async {
     List<TodoItem>? tempList = [];
+    CollectionReference todos = FirebaseFirestore.instance.collection('todos');
+    DocumentSnapshot docSnapshot = await todos.doc(userEmail).get(); // 이메일 값으로 문서 받아오기
 
+    if (docSnapshot.exists) {
+      // 문서의 데이터를 가져옴
+      Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+      String jsonData = data['data'];
+
+      // JSON 데이터를 TodoItem 객체의 리스트로 변환
+      List<dynamic> jsonList = jsonDecode(jsonData);
+      List<TodoItem> todoItems = jsonList.map((json) => TodoItem.fromJson(json)).toList();
+
+      return todoItems;
+    } else {
+      // 문서가 존재하지 않는 경우 빈 리스트 반환
+      print('해당 사용자의 기존 문서가 없어 빈 리스트를 반환합니다.');
+      return [];
+    }
     return tempList;
   }
 
   // 서버에 현재 리스트 업로드
-  void saveServer(List<TodoItem> list) {
-
+  Future<void> saveServer(List<TodoItem> list, String userEmail) async {
+    CollectionReference todos = FirebaseFirestore.instance.collection('todos');
+    // 서버에 넣을 목적으로 json 생성
+    String jsonString = jsonEncode(list.map((item) => item.toJson()).toList());
+    // 현재 유저의 이메일을 문서 ID로 하여 서버에 업로드
+    try {
+      await todos.doc(userEmail).set({'data': jsonString});
+    } catch(e) {
+      print('task 업로드 중 문제가 발생했습니다 : ' + e.toString());
+    }
   }
 
   // db에서 테이블 생성
@@ -182,11 +150,6 @@ class _MyHomePageState extends State<MyHomePage> {
   ''');
   }
 
-  // 할 일 목록을 map(json)으로 만들어서 정보전달용 파일로 변환하기 (일단 남겨놓는데 서버에서도 필요없으면 지우기)
-  Map<String, dynamic> toMap() => {
-    'todoList' : gettedTasks,
-  };
-
   // 부모 참조를 위한 재귀문 처리용
   void updateSuperTask(TodoItem item) {
     for (var task in item.subTasks) {
@@ -198,7 +161,6 @@ class _MyHomePageState extends State<MyHomePage> {
   // initState() 내에서 비동기 작업 처리를 위한 함수 // async function for initState()
   void initAsync() async {
     prefs = await SharedPreferences.getInstance(); // 로컬 간단변수 저장용 객체 초기화 // init local saving instance
-    firestoreService = FirestoreService(); // 서버 저장용 객체 초기화 // init server saving instance
     // db = await openDatabase('my_db.db'); // 로컬 할일목록 저장용 객체 초기화 // init local list saving instance
 
     // db 초기화 // init db
@@ -233,8 +195,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     } else {
       // 다르면 서버에 query 해서 정보 불러오기, sqlite로 로컬에 저장, 마지막 접속한 유저 갱신
-      gettedTasks = getTask_server();
+      gettedTasks = await getTask_server(account_email!);
       saveLocal(gettedTasks!);
+      for(var tasks in gettedTasks!) {  // 얘도 재귀적으로 부모 노드 연결 갱신한다.
+        updateSuperTask(tasks);
+      }
       prefs?.setString('lastUser', account_email!);
     }
 
@@ -268,13 +233,15 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: (){
                 // 로컬에 TodoList 정보 저장
                 saveLocal(gettedTasks!);
+                Fluttertoast.showToast(msg: "Local saved!");
               },
             ),
             TextButton(
               child: Text("Upload this task into server"),
               onPressed: (){
                 // 서버에 TodoList 정보 업로드
-                saveServer(gettedTasks!);
+                saveServer(gettedTasks!, account_email!);
+                Fluttertoast.showToast(msg: "Uploaded! Make sure to download your extern files!!");
               },
             ),
           ],

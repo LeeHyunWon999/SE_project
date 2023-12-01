@@ -56,6 +56,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  final _googleSignIn = GoogleSignIn(
+    clientId: '647470475554-qi3ro055j6e4qggtb326ot9toucti12q.apps.googleusercontent.com',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -72,15 +75,13 @@ class _MyHomePageState extends State<MyHomePage> {
             height: 200,
           ),
           Text('Todo App'),
-          TextButton(
+          ElevatedButton(
             child: Text('Login'),
             onPressed: () async{
               // 이거 누르면 메인트리 화면으로 이동 // move into view page(tree)
               // 여긴 튜토리얼 페이지 보고 따라하기 // following tutorial
               // https://cokebi.com/34
-              final _googleSignIn = GoogleSignIn(
-                clientId: '647470475554-qi3ro055j6e4qggtb326ot9toucti12q.apps.googleusercontent.com',
-              );
+
               final googleAccount = await _googleSignIn.signIn();
 
               if (googleAccount != null) {
@@ -118,6 +119,17 @@ class _MyHomePageState extends State<MyHomePage> {
               //Navigator.push(context, MaterialPageRoute(builder: (context) => TodoTree()));
             },
           ),
+          ElevatedButton(onPressed: () async{
+            // Google 로그아웃
+            await _googleSignIn.signOut();
+
+            // Firebase 로그아웃
+            await FirebaseAuth.instance.signOut();
+
+            Fluttertoast.showToast(msg: "Logouted!");
+
+            // 필요한 경우 로그인 화면으로 돌아가거나 다른 처리를 수행
+          }, child: Text('Logout')),
         ],
       ),
     );

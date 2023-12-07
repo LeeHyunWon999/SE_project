@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'firebase_options.dart';
@@ -13,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'requirement_1.dart';
 import 'requirement_2.dart';
+import 'requirement_view.dart';
 
 int ID_num = 0; // 작업에 각각 부여하는 개별 아이디
 
@@ -46,6 +48,7 @@ class MyHomePage extends StatefulWidget {
 
   final String title;
 
+
   @override
   State<MyHomePage> createState() => _MyHomePageState(account_id: account_id, account_photoUrl: account_photoUrl, account_email: account_email);
 }
@@ -59,6 +62,8 @@ class _MyHomePageState extends State<MyHomePage> {
   SharedPreferences? prefs; // local에 마지막 접속한 사용자 이메일 저장용 객체 // saving last connected user email to local
   var db; // 로컬 db // local db
 
+  int currentView = 0; // 현재 선택중인 view(0 : 트리(계층), 1 : 우선순위, 2 : 캘린더, 3 : 마감일)
+
 
   // 생성자 // constructor
   _MyHomePageState({
@@ -66,6 +71,11 @@ class _MyHomePageState extends State<MyHomePage> {
     required this.account_photoUrl,
     required this.account_email,
   });
+
+
+
+
+
 
   // 로컬에서 sqlite로 할 일 목록 받아오기
   Future<List<TodoItem>> getTask_local() async {
@@ -79,6 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if(jsonData is List) {
       todoItems.addAll(jsonData.map((jsonItem) => TodoItem.fromJson(jsonItem)).toList());
     }
+
+    // json 저장시점에서 ID_count는 모두가 같은 값을 저장하므로 그중에 하나 받아다가 갱신
+    // TodoItem.ID_count = jsonData[0]['ID_count'] + 1;
 
     return todoItems;
   }
@@ -117,6 +130,9 @@ class _MyHomePageState extends State<MyHomePage> {
       // JSON 데이터를 TodoItem 객체의 리스트로 변환
       List<dynamic> jsonList = jsonDecode(jsonData);
       List<TodoItem> todoItems = jsonList.map((json) => TodoItem.fromJson(json)).toList();
+
+      // json 저장시점에서 ID_count는 모두가 같은 값을 저장하므로 그중에 하나 받아다가 갱신
+      // TodoItem.ID_count = jsonList[0]['ID_count'] + 1;
 
       return todoItems;
     } else {
@@ -215,6 +231,27 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    GlobalKey<TodoListState> todoListKey = GlobalKey<TodoListState>();
+
+    // view 종류 지정용 // choosing view
+    Widget currentView_widget;
+    switch(currentView) {
+      case 0 :
+        currentView_widget = TodoList(items: gettedTasks!, key: todoListKey);
+        break;
+      case 1 :
+        currentView_widget = buildView_Priority(gettedTasks!);
+        break;
+      case 2 :
+        currentView_widget = buildView_Calendar(gettedTasks!);
+        break;
+      case 3 :
+        currentView_widget = buildView_DueDate(gettedTasks!);
+      default :
+        currentView_widget = TodoList(items: gettedTasks!, key: todoListKey);
+        break;
+    }
+
     return Scaffold(
       drawer: Drawer(
         child: ListView(
@@ -226,6 +263,54 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Text("Change the view"),
               onPressed: (){
                 // 뷰 변경 // changing view
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      actions: [
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                                onPressed: (){
+                                  setState(() {
+                                    currentView = 0;
+                                  });
+                                },
+                               child: Text("Tree View")
+                            ),
+                            ElevatedButton(
+                                onPressed: (){
+                                  setState(() {
+                                    currentView = 1;
+                                  });
+                                },
+                                child: Text("Priority View")
+                            ),
+                            ElevatedButton(
+                                onPressed: (){
+                                  setState(() {
+                                    currentView = 2;
+                                  });
+                                },
+                                child: Text("Calendar View")
+                            ),
+                            ElevatedButton(
+                                onPressed: (){
+                                  setState(() {
+                                    currentView = 3;
+                                  });
+                                },
+                                child: Text("Due date View")
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                );
               },
             ),
             TextButton(
@@ -253,7 +338,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //leading: Image.network(account_photoUrl!),
 
       ),
-      body: TodoList(items: gettedTasks!),
+      body: currentView_widget,
       bottomNavigationBar: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
@@ -275,13 +360,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 barrierDismissible: true,
                 builder: (BuildContext context){
                   return AlertDialog(
-                    title: Icon(Icons.add),
+                    title: Text("creating root task"),
                     content: Container( // 너비지정용 // setting width by this
                       width: 600,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text("creating root task UI"),
                           TextField(
                             controller: TaskNameController,
                               decoration: InputDecoration(
@@ -291,12 +375,14 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           SizedBox(height: 10, width: 100,),
                           TextField(
-                            controller: TaskPriorController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9]'))],
+                              controller: TaskPriorController,
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(),
-                                labelText: 'Priority(need to be change into number input)',
-                              )
-                          ),
+                                labelText:
+                                'Priority',
+                              )),
                           SizedBox(height: 10, width: 100,),
                           TextField(
                             controller: TaskLocController,
@@ -310,7 +396,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             controller: TaskTagController,
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(),
-                                labelText: 'tags(optional)(no need to be change but need to parsing to use)',
+                                labelText: 'tags(optional)',
                               )
                           ),
                           // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
@@ -326,7 +412,11 @@ class _MyHomePageState extends State<MyHomePage> {
                             // 작업 생성 시도
                             setState(() {
                               gettedTasks?.add(TodoItem(title: TaskNameController.text,
-                                  tags: TaskTagController.text.split(","), subTasks: [], superTask: null, location: TaskLocController.text));
+                                tags: TaskTagController.text.split(","),
+                                subTasks: [], superTask: null,
+                                location: TaskLocController.text,
+                                priority: TaskPriorController.text.isEmpty ? 0 : int.parse(TaskPriorController.text),
+                              ));
                             });
 
 

@@ -78,7 +78,7 @@ class TodoItem {
       'isAlarmEnabled' : isAlarmEnabled ? 1 : 0,
       'alarmTime' : alarmTime?.toIso8601String(),
       'isDeadlineEnabled' : isDeadlineEnabled ? 1 : 0,
-      'deadline' : deadline,
+      'deadline' : deadline?.toIso8601String(),
       'ID_count' : ID_count,
     };
   }
@@ -110,7 +110,7 @@ class TodoItem {
       isAlarmEnabled: json['isAlarmEnabled'] == 1 ? true : false,
       alarmTime: json['alarmTime'] == null ? null : DateTime.parse(json['alarmTime']),
       isDeadlineEnabled: json['isDeadlineEnabled'] == 1 ? true : false,
-      deadline: json['deadline'],
+      deadline: json['deadline'] == null ? null : DateTime.parse(json['deadline']),
     );
   }
 
@@ -205,6 +205,7 @@ void informWindow(BuildContext context, TodoItem item, List<TodoItem> items, Lis
                 Text("Priority : " + item.priority.toString()),
                 Text("Tags : " + item.tags.toString()),
                 Text("Location : " + item.location.toString()),
+                Text("Due date : ${item.isDeadlineEnabled ? item.deadline : "None"}"),
                 // 직접 클릭하는걸로 변경해야 보일듯 // it would visable if create option changes into clickable object
                 Text("Progress : " +
                     (item.progress * 100).toString() +

@@ -276,6 +276,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             ElevatedButton(
                                 onPressed: (){
                                   setState(() {
+                                    Navigator.of(context)
+                                        .pop();
                                     currentView = 0;
                                   });
                                 },
@@ -284,6 +286,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             ElevatedButton(
                                 onPressed: (){
                                   setState(() {
+                                    Navigator.of(context)
+                                        .pop();
                                     currentView = 1;
                                   });
                                 },
@@ -292,6 +296,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             ElevatedButton(
                                 onPressed: (){
                                   setState(() {
+                                    Navigator.of(context)
+                                        .pop();
                                     currentView = 2;
                                   });
                                 },
@@ -300,6 +306,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             ElevatedButton(
                                 onPressed: (){
                                   setState(() {
+                                    Navigator.of(context)
+                                        .pop();
                                     currentView = 3;
                                   });
                                 },

@@ -1,11 +1,15 @@
 import 'package:se_project/alarm.dart';
 import 'package:flutter/material.dart';
 
+
+import 'package:se_project/requirement_1.dart';
+
 // 알람 설정 화면을 구현하는 데 사용
 // 이 화면은 사용자가 알람을 설정하고 조정할 수 있는 여러 옵션을 제공.
 class ExampleAlarmEditScreen extends StatefulWidget {
   final AlarmSettings? alarmSettings; // 'alarmSetting' : 기존 알람 설정을 받아올 수 있는 선택적 매개변수
-  final Function(DateTime)? onSave; // Callback 함수 추가
+  final Function(DateTime)? onSave; // 콜백 함수 추가
+
 
   const ExampleAlarmEditScreen({Key? key, this.alarmSettings, this.onSave,}) // State<ExampleAlarmEditScreen> 타입의 상태 클래스를 반환하는 createState 메서드를 오버라이드
       : super(key: key);
@@ -17,7 +21,6 @@ class ExampleAlarmEditScreen extends StatefulWidget {
 class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
   // loading, creating, selectedDateTime ... assetAudio 등 다양한 상태 변수들
   bool loading = false;
-  bool isAlarmSaved = false;
 
   late bool creating;
   late DateTime selectedDateTime;
@@ -27,6 +30,7 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
   late bool showNotification;
   late bool complexNotification;
   late String assetAudio;
+
 
   @override
   void initState() {    // 화면이 처음 로드될 때 호출되어 변수들을 초기화. 새 알람을 생성하는 경우 기본값을 설정하고, 기존 알람을 수정하는 경우 해당 값들을 기존 설정에서 가져옴
@@ -42,6 +46,8 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
       showNotification = true;
       complexNotification = false;
       assetAudio = 'assets/marimba.mp3';
+      //assetAudio = 'C:/Users/Kwon/AndroidStudioProjects/se_project/assets/marimba.mp3';
+
     } else {
       selectedDateTime = widget.alarmSettings!.dateTime;
       loopAudio = widget.alarmSettings!.loopAudio;
@@ -56,9 +62,6 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
     }
   }
 
-  void onAlarmSaved(DateTime alarmTime){
-    widget.onSave?.call(alarmTime);
-  }
 
   String getDay() {   // 선택된 날짜가 현재 날짜와 얼마나 덜어져 있는지를 계산하여 문자열로 반환
     final now = DateTime.now();
@@ -116,11 +119,13 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
 
   void saveAlarm() { // 설정된 알람을 저장한다. 비동기로 'Alarm.set'을 호출하고, 성공적으로 저장되면 화면을 닫는다.
     setState(() => loading = true);
+    final alarmSettings = buildAlarmSettings();
+    print("Alarm Time : ${alarmSettings.dateTime}");
+
     Alarm.set(alarmSettings: buildAlarmSettings()).then((res) {
-      print("Alarm Setting");
-      if (res) {
-        widget.onSave?.call(selectedDateTime);
-        Navigator.of(context).pop();}// Navigator.pop(context, true);
+        print("Alarm Setting");
+        widget.onSave?.call(alarmSettings.dateTime);
+        Navigator.of(context).pop();
     });
     setState(() => loading = false);
   }
@@ -155,6 +160,7 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
                 TextButton(
                   onPressed: () => {saveAlarm(),
                     print("save"),
+                    print("setting time : ")
                   },
                   child: loading
                       ? const CircularProgressIndicator()
@@ -266,6 +272,7 @@ class _ExampleAlarmEditScreenState extends State<ExampleAlarmEditScreen> {
                   items: const [
                     DropdownMenuItem<String>(
                       value: 'assets/marimba.mp3',
+                      //value: 'C:/Users/Kwon/AndroidStudioProjects/se_project/assets/marimba.mp3',
                       child: Text('Marimba'),
                     ),
                     DropdownMenuItem<String>(

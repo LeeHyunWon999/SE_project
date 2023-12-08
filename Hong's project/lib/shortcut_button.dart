@@ -31,7 +31,8 @@ class _ExampleAlarmHomeShortcutButtonState
     final alarmSettings = AlarmSettings(
       id: DateTime.now().millisecondsSinceEpoch % 10000,
       dateTime: dateTime,
-      assetAudioPath: 'assets/marimba.mp3',
+      assetAudioPath: '../assets/marimba.mp3',
+      //assetAudioPath: 'C:/Users/Kwon/AndroidStudioProjects/se_project/assets/marimba.mp3',
       volumeMax: true,
     );
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,19 +8,16 @@ import 'requirement_2.dart';
 import 'package:se_project/alarm.dart';
 import 'package:se_project/edit_alarm.dart';
 import 'package:se_project/ring.dart';
+import 'package:se_project/complex_ring.dart';
 // import 'package:se_project/shortcut_button.dart';
 import 'package:se_project/tile.dart';
 import 'package:se_project/home.dart';
+import 'package:intl/intl.dart';
+// import 'package:awesome_notifications/awesome_notifications.dart';
 
-
+// dd
 // 필수 요구사항 1번에 대한 기능들 작성 // Functions for mandatory requirements #1
 // 다른 요구사항에서 1번의 수정이 필요한 경우 수정가능 // editable if other requirements needs to do
-
-
-
-
-
-
 
 
 
@@ -146,7 +144,8 @@ class TodoItem {
 //   }
 // }
 
-void showEditAlarmModal(BuildContext context, Function(DateTime) onAlarmSet) {
+
+void showEditAlarmModal(BuildContext context, Function(DateTime) onSave) {
   showModalBottomSheet(
     context: context,
     enableDrag: true,
@@ -154,15 +153,14 @@ void showEditAlarmModal(BuildContext context, Function(DateTime) onAlarmSet) {
     isScrollControlled: false,
     // isScrollControlled: true, // 모달을 전체 화면으로 표시하려면 true로 설정
     builder: (BuildContext context) {
-      return Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: ExampleAlarmEditScreen(
-          onSave: (DateTime alarmTime) {
-            onAlarmSet(alarmTime);
-          },
-        ),
+      // return Container(
+      //   padding: EdgeInsets.only(
+      //     bottom: MediaQuery.of(context).viewInsets.bottom,
+      //   ),
+      //   child: ExampleAlarmEditScreen(),
+      // );
+      return ExampleAlarmEditScreen(
+        onSave: onSave,
       );
     },
   );
@@ -417,10 +415,10 @@ void informWindow(BuildContext context, TodoItem item, List<TodoItem> items,
                     item.isAlarmEnabled = value;
                     if (value) {
                       // toggle이 켜질 때만 모달 표시
-                      showEditAlarmModal(context, (DateTime time) {
+                      showEditAlarmModal(context, (DateTime time){
+                        // Update the TodoItem with the alarm time
                         setState(() {
                           item.alarmTime = time;
-                          item.isAlarmEnabled = true;
                         });
                       });
                       // toggle이 꺼질 때는 아무것도 하지 않음.
@@ -428,7 +426,10 @@ void informWindow(BuildContext context, TodoItem item, List<TodoItem> items,
                   });
                 },
               ),
-              Text("Alarm time : ${item.alarmTime}")
+
+              // Text("Alarm time : ${item.alarmTime}")
+              Text("Alarm time : ${item.isAlarmEnabled && item.alarmTime != null ? DateFormat('MM/dd HH:mm').format(item.alarmTime!) : 'no settings'}")
+
             ],
           );
         },
@@ -450,7 +451,67 @@ class TodoList extends StatefulWidget {
 
 // 위에껀 상태 변경 가능한 위젯 껍데기고, 이게 위젯 내부의 내용을 채워주는 자유로운 내부 핵심 클래스 // Upper class is 'stateful' outer class, this is core class
 class _TodoListState extends State<TodoList> {
+  late List<AlarmSettings> alarms;
+
+  static StreamSubscription? subscription;
+
   @override
+  void initState() {
+    super.initState();
+    loadAlarms();
+    subscription ??= Alarm.ringStream.stream.listen(    // subscription이 null이면, 알람이 울리면 navigateToRingScreen을 트리거하는 Alarm.ringStream을 듣도록 설정됨.
+          (alarmSettings) { navigateToRingScreen(alarmSettings, );
+    });
+  }
+
+
+
+  // Alarm.getAlarms()의 반환값으로 alarms 리스트의 상태를 설정하고, 날짜와 시간으로 알람을 정렬하여 표시
+  void loadAlarms() {
+    setState(() {
+      alarms = Alarm.getAlarms();
+      alarms.sort((a, b) => a.dateTime.isBefore(b.dateTime) ? 0 : 1);
+    });
+  }
+
+  // navigateToRingScreen은 AlarmSettings 객체를 가져와 알람이 울릴 때 ExampleAlarmRingScreen으로 네비게이션
+  // Future<void> navigateToRingScreen(AlarmSettings alarmSettings) async {
+  //   await Navigator.push(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (context) =>
+  //             ExampleAlarmRingScreen(alarmSettings: alarmSettings),
+  //       ));
+  //   loadAlarms();
+  // }
+
+  Future<void> navigateToRingScreen(AlarmSettings alarmSettings) async {
+    // complexNotification 값에 따라 다른 스크린으로 네비게이션
+    if (alarmSettings.complexNotification) {
+       //ComplexAlarmRingScreen으로 네비게이션
+        await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ComplexAlarmRingScreen(alarmSettings: alarmSettings),
+        ),
+      );
+
+    } else {
+      // ExampleAlarmRingScreen으로 네비게이션
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExampleAlarmRingScreen(
+            alarmSettings: alarmSettings,),
+        ),
+      );
+
+    }
+    loadAlarms();
+  }
+
+
+
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: widget.items.length,
@@ -459,6 +520,8 @@ class _TodoListState extends State<TodoList> {
       },
     );
   }
+
+
 
   // 상태변경 콜백 메소드 : 작업생성 // setState callback : create task
   void createTask(TodoItem item,
@@ -581,7 +644,7 @@ class _TodoListState extends State<TodoList> {
             ),
             onTap: () {
               // 항목 클릭 시 로직 : 창 켜기
-              informWindow(context, item, items, createTask, removeTask);
+              informWindow(context, item, items, createTask, removeTask,);
             },
           ),
         ),

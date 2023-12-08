@@ -1,4 +1,9 @@
 // ignore_for_file: avoid_print
+// 알람 관리 : Alarm 클래스는 알람 설정, 중지, 확인 및 관리를 담당한다.
+// 알람 초기화 : init 함수는 알람 서비스를 초기화하고 이전 세션에서 설정된 알람을 다시 예약한다.
+// set 함수는 AlarmSettings 객체를 사용하여 알람을 예약한다. 필요한 경우 알림도 함께 예약된다.
+// stop 함수는 지정된 ID의 알람을 중지한다.
+// 알람 상태 확인 : hasAlarm, isRinging, getAlarm, getAlarms 함수를 통해 알람의 상태와 설정을 확인할 수 있다.
 
 export 'package:se_project/alarm_settings.dart';
 import 'dart:async';

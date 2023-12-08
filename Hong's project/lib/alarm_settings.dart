@@ -7,7 +7,7 @@ class AlarmSettings {
   final DateTime dateTime;
 
   /// Path to audio asset to be used as the alarm ringtone. Accepted formats:
-  /// 알람 벨소리로 사용될 오디오 파일의 경로
+  /// 알람 벨소리로 사용될 오디오d 파일의 경로
   /// * Project asset: `assets/your_audio.mp3`.
   /// * Local asset: `/path/to/your/audio.mp3`, which is your `File.path`.
   final String assetAudioPath;

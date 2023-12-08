@@ -1,10 +1,12 @@
 import 'package:se_project/alarm.dart';
 import 'package:flutter/material.dart';
+import 'package:se_project/requirement_1.dart';
 
 // 알림이 울리는 화면을 나타내는 인터페이스 구성
 // 알림이 울릴 때 보여질 UI를 정의.
 class ExampleAlarmRingScreen extends StatelessWidget {
   final AlarmSettings alarmSettings;
+
 
   const ExampleAlarmRingScreen({Key? key, required this.alarmSettings})
       : super(key: key);
@@ -49,7 +51,8 @@ class ExampleAlarmRingScreen extends StatelessWidget {
                 RawMaterialButton(    // "Stop" 버튼으로, 클릭하면 "Alarm.stop" 메소드를 호출하여 알람을 중지함. 이 메소드는 'alarmSettings.id'를 인자로 받는다.
                   onPressed: () {
                     Alarm.stop(alarmSettings.id)
-                        .then((_) => Navigator.pop(context));
+                        .then((_) {
+                          Navigator.pop(context, false);});
                   },
                   child: Text(
                     "Stop",

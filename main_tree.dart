@@ -1,9 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:test_flutter/ring.dart';
 
+import 'alarm.dart';
+import 'alarm_settings.dart';
+import 'complex_ring.dart';
 import 'firebase_options.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -65,12 +71,94 @@ class _MyHomePageState extends State<MyHomePage> {
   int currentView = 0; // 현재 선택중인 view(0 : 트리(계층), 1 : 우선순위, 2 : 캘린더, 3 : 마감일)
 
 
+  // 알람 변수
+  late List<AlarmSettings> alarms;
+  static StreamSubscription? subscription;
+
+  ThemeMode _themeMode = ThemeMode.system; // 기본값으로 시스템 테마를 사용합니다.
+
+
+  bool isKakaoTalkSharingAvailable = false; // 카톡 공유여부 확인용
+
+
+  // 공유용 임시 메시지
+  final TextTemplate defaultText = TextTemplate(
+    text:
+    '카카오톡 공유는 카카오 플랫폼 서비스의 대표 기능으로써 사용자의 모바일 기기에 설치된 카카오 플랫폼과 연동하여 다양한 기능을 실행할 수 있습니다.\n현재 이용할 수 있는 카카오톡 공유는 다음과 같습니다.\n카카오톡링크\n카카오톡을 실행하여 사용자가 선택한 채팅방으로 메시지를 전송합니다.',
+    link: Link(
+      webUrl: Uri.parse('https://www.google.com'),
+      mobileWebUrl: Uri.parse('https: //www.google.com'),
+    ),
+  );
+  
+  
+  
+  
+  
   // 생성자 // constructor
   _MyHomePageState({
     required this.account_id,
     required this.account_photoUrl,
     required this.account_email,
   });
+
+
+
+
+
+
+  // Alarm.getAlarms()의 반환값으로 alarms 리스트의 상태를 설정하고, 날짜와 시간으로 알람을 정렬하여 표시
+  void loadAlarms() {
+    setState(() {
+      alarms = Alarm.getAlarms();
+      alarms.sort((a, b) => a.dateTime.isBefore(b.dateTime) ? 0 : 1);
+    });
+    print("알람 로드 완료");
+  }
+
+
+  Future<void> navigateToRingScreen(AlarmSettings alarmSettings) async {
+    // complexNotification 값에 따라 다른 스크린으로 네비게이션
+    if(mounted) {
+      if (alarmSettings.complexNotification) {
+        //ComplexAlarmRingScreen으로 네비게이션
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                ComplexAlarmRingScreen(alarmSettings: alarmSettings),
+          ),
+        );
+      } else {
+        // ExampleAlarmRingScreen으로 네비게이션
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                ExampleAlarmRingScreen(
+                  alarmSettings: alarmSettings,),
+          ),
+        );
+      }
+    }
+    else print("주의 : 화면 전환 처리 도중 마운트 체크가 false가 되어있음!!");
+    if(mounted) {
+      loadAlarms();
+    } else print("주의 : 마운트 2스택");
+  }
+
+
+
+  @override
+  void dispose() {
+    print("위젯이 사라집니다!!");
+    subscription?.cancel();
+    super.dispose();
+  }
+
+
+
+
 
 
 
@@ -98,13 +186,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 로컬로 현재 리스트 저장
   void saveLocal(List<TodoItem> list) async {
-    // List<String> jsonList = list.map((item) => jsonEncode(item.toJson())).toList();
 
     String jsonString = jsonEncode(list.map((item) => item.toJson()).toList());
 
     // 이게 sqlite 문법이라 한다
     await db.transaction((txn) async {
-        // await txn.insert('todolist', {'abc' : jsonString});
       int? count = Sqflite.firstIntValue(await txn.rawQuery('SELECT COUNT(*) FROM todolist WHERE id = 1'));
       if (count == 0) {
         // 행이 없으면 새로 만듭니다.
@@ -219,6 +305,17 @@ class _MyHomePageState extends State<MyHomePage> {
       prefs?.setString('lastUser', account_email!);
     }
 
+
+    // 카톡 공유 API 위한 인스턴스 초기화
+    isKakaoTalkSharingAvailable = await ShareClient.instance.isKakaoTalkSharingAvailable();
+
+    if (isKakaoTalkSharingAvailable) {
+      print('카카오톡으로 공유 가능');
+    } else {
+      print('카카오톡 미설치: 웹 공유 기능 사용 권장');
+    }
+
+
     setState((){});
   }
 
@@ -227,7 +324,37 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     initAsync();
+
+    print("위젯을 생성합니다!");
+    loadAlarms();
+    subscription ??= Alarm.ringStream.stream.listen(    // subscription이 null이면, 알람이 울리면 navigateToRingScreen을 트리거하는 Alarm.ringStream을 듣도록 설정됨.
+            (alarmSettings) {
+          print("Alarm event received"); // 로깅 추가
+          navigateToRingScreen(alarmSettings);
+        });
+    print("subscription 생성 완료");
+
+    _loadThemeMode();
   }
+
+  // 다크모드 설정 // setting dark mode
+  Future<void> _loadThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDarkMode = prefs.getBool('darkMode') ?? false; // 기본값은 false입니다.
+    setState(() {
+      _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  // 테마 변경 콜백
+  Future<void> _toggleThemeMode(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('darkMode', isDark);
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -252,68 +379,237 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
     }
 
-    return Scaffold(
-      drawer: Drawer(
-        child: ListView(
+    return MaterialApp(
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+      ),
+      themeMode: _themeMode, // 현재 테마 모드를 적용합니다.
+      home: Scaffold(
+
+        drawer: Drawer(
+          child: ListView(
+            children: [
+              UserAccountsDrawerHeader(
+                currentAccountPicture: CircleAvatar(backgroundImage: NetworkImage(account_photoUrl!),),
+                  accountName: Text(account_id!), accountEmail: Text(account_email!)),
+              TextButton(
+                child: Text("Change the view"),
+                onPressed: (){
+                  // 뷰 변경 // changing view
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        actions: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ElevatedButton(
+                                  onPressed: (){
+                                    setState(() {
+                                      Navigator.of(context)
+                                          .pop();
+                                      currentView = 0;
+                                    });
+                                  },
+                                 child: Text("Tree View")
+                              ),
+                              ElevatedButton(
+                                  onPressed: (){
+                                    setState(() {
+                                      Navigator.of(context)
+                                          .pop();
+                                      currentView = 1;
+                                    });
+                                  },
+                                  child: Text("Priority View")
+                              ),
+                              ElevatedButton(
+                                  onPressed: (){
+                                    setState(() {
+                                      Navigator.of(context)
+                                          .pop();
+                                      currentView = 2;
+                                    });
+                                  },
+                                  child: Text("Calendar View")
+                              ),
+                              ElevatedButton(
+                                  onPressed: (){
+                                    setState(() {
+                                      Navigator.of(context)
+                                          .pop();
+                                      currentView = 3;
+                                    });
+                                  },
+                                  child: Text("Due date View")
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+              TextButton(
+                child: Text("Save this task into local"),
+                onPressed: (){
+                  // 로컬에 TodoList 정보 저장
+                  saveLocal(gettedTasks!);
+                  Fluttertoast.showToast(msg: "Local saved!");
+                },
+              ),
+              TextButton(
+                child: Text("Upload this task into server"),
+                onPressed: (){
+                  // 서버에 TodoList 정보 업로드
+                  saveServer(gettedTasks!, account_email!);
+                  Fluttertoast.showToast(msg: "Uploaded! Make sure to download your extern files!!");
+                },
+              ),
+              SwitchListTile(
+                title: Text("Dark Mode"),
+                value: _themeMode == ThemeMode.dark,
+                onChanged: _toggleThemeMode,
+              ),
+              ElevatedButton(onPressed: () async{
+
+                // 카카오톡 실행 가능 여부 확인
+                bool isKakaoTalkSharingAvailable = await ShareClient.instance.isKakaoTalkSharingAvailable();
+
+                if (isKakaoTalkSharingAvailable) {
+                  try {
+                    Uri uri =
+                    await ShareClient.instance.shareDefault(template: defaultText);
+                    await ShareClient.instance.launchKakaoTalk(uri);
+                    print('카카오톡 공유 완료');
+                  } catch (error) {
+                    print('카카오톡 앱 공유 실패 $error');
+                  }
+                } else {
+                  try {
+                    Uri shareUrl = await WebSharerClient.instance
+                        .makeDefaultUrl(template: defaultText);
+                    await launchBrowserTab(shareUrl, popupOpen: true);
+                  } catch (error) {
+                    print('카카오톡 웹 공유 실패 $error');
+                  }
+                }
+
+
+
+
+              }, child: Text("Share")),
+            ],
+          ),
+        ),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: Text(widget.title),
+          //leading: Image.network(account_photoUrl!),
+
+        ),
+        body: currentView_widget,
+        bottomNavigationBar: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            UserAccountsDrawerHeader(
-              currentAccountPicture: CircleAvatar(backgroundImage: NetworkImage(account_photoUrl!),),
-                accountName: Text(account_id!), accountEmail: Text(account_email!)),
             TextButton(
-              child: Text("Change the view"),
+              child: Text("Create New Root Tasks"),
               onPressed: (){
-                // 뷰 변경 // changing view
+
+                // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
+                final TaskNameController = TextEditingController();
+                final TaskPriorController = TextEditingController();
+                final TaskLocController = TextEditingController();
+                final TaskTagController = TextEditingController();
+                // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
+                // myController.text 형식으로 접근 // access fields by like myController.text
+
                 showDialog(
                   context: context,
                   barrierDismissible: true,
-                  builder: (BuildContext context) {
+                  builder: (BuildContext context){
                     return AlertDialog(
-                      actions: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                      title: Text("creating root task"),
+                      content: Container( // 너비지정용 // setting width by this
+                        width: 600,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            ElevatedButton(
-                                onPressed: (){
-                                  setState(() {
-                                    Navigator.of(context)
-                                        .pop();
-                                    currentView = 0;
-                                  });
-                                },
-                               child: Text("Tree View")
+                            TextField(
+                              controller: TaskNameController,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Task name',
+                                )
                             ),
-                            ElevatedButton(
-                                onPressed: (){
-                                  setState(() {
-                                    Navigator.of(context)
-                                        .pop();
-                                    currentView = 1;
-                                  });
-                                },
-                                child: Text("Priority View")
+                            SizedBox(height: 10, width: 100,),
+                            TextField(
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9]'))],
+                                controller: TaskPriorController,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText:
+                                  'Priority',
+                                )),
+                            SizedBox(height: 10, width: 100,),
+                            TextField(
+                              controller: TaskLocController,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'location(optional)',
+                                )
                             ),
-                            ElevatedButton(
-                                onPressed: (){
-                                  setState(() {
-                                    Navigator.of(context)
-                                        .pop();
-                                    currentView = 2;
-                                  });
-                                },
-                                child: Text("Calendar View")
+                            SizedBox(height: 10, width: 100,),
+                            TextField(
+                              controller: TaskTagController,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'tags(optional)',
+                                )
                             ),
-                            ElevatedButton(
-                                onPressed: (){
-                                  setState(() {
-                                    Navigator.of(context)
-                                        .pop();
-                                    currentView = 3;
-                                  });
-                                },
-                                child: Text("Due date View")
-                            ),
+                            // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
+                            SizedBox(height: 10, width: 100,),
                           ],
+                        ),
+                      ),
+                      actions: <Widget>[
+                        Container(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); //창 닫기 // close Dialog with Create tasks
+                              // 작업 생성 시도
+                              setState(() {
+                                gettedTasks?.add(TodoItem(title: TaskNameController.text,
+                                  tags: TaskTagController.text.split(","),
+                                  subTasks: [], superTask: null,
+                                  location: TaskLocController.text,
+                                  priority: TaskPriorController.text.isEmpty ? 0 : int.parse(TaskPriorController.text),
+                                ));
+                              });
+
+
+                            },
+                            child: Text("Create"),
+                          ),
+                        ),
+                        Container(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); //창 닫기 // close Dialog with cancel
+                            },
+                            child: Text("Cancel"),
+                          ),
                         ),
                       ],
                     );
@@ -321,132 +617,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },
             ),
-            TextButton(
-              child: Text("Save this task into local"),
-              onPressed: (){
-                // 로컬에 TodoList 정보 저장
-                saveLocal(gettedTasks!);
-                Fluttertoast.showToast(msg: "Local saved!");
-              },
-            ),
-            TextButton(
-              child: Text("Upload this task into server"),
-              onPressed: (){
-                // 서버에 TodoList 정보 업로드
-                saveServer(gettedTasks!, account_email!);
-                Fluttertoast.showToast(msg: "Uploaded! Make sure to download your extern files!!");
-              },
-            ),
           ],
         ),
-      ),
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-        //leading: Image.network(account_photoUrl!),
-
-      ),
-      body: currentView_widget,
-      bottomNavigationBar: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextButton(
-            child: Text("Create New Root Tasks"),
-            onPressed: (){
-
-              // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
-              final TaskNameController = TextEditingController();
-              final TaskPriorController = TextEditingController();
-              final TaskLocController = TextEditingController();
-              final TaskTagController = TextEditingController();
-              // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
-              // myController.text 형식으로 접근 // access fields by like myController.text
-
-              showDialog(
-                context: context,
-                barrierDismissible: true,
-                builder: (BuildContext context){
-                  return AlertDialog(
-                    title: Text("creating root task"),
-                    content: Container( // 너비지정용 // setting width by this
-                      width: 600,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextField(
-                            controller: TaskNameController,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'Task name',
-                              )
-                          ),
-                          SizedBox(height: 10, width: 100,),
-                          TextField(
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9]'))],
-                              controller: TaskPriorController,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText:
-                                'Priority',
-                              )),
-                          SizedBox(height: 10, width: 100,),
-                          TextField(
-                            controller: TaskLocController,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'location(optional)',
-                              )
-                          ),
-                          SizedBox(height: 10, width: 100,),
-                          TextField(
-                            controller: TaskTagController,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'tags(optional)',
-                              )
-                          ),
-                          // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
-                          SizedBox(height: 10, width: 100,),
-                        ],
-                      ),
-                    ),
-                    actions: <Widget>[
-                      Container(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); //창 닫기 // close Dialog with Create tasks
-                            // 작업 생성 시도
-                            setState(() {
-                              gettedTasks?.add(TodoItem(title: TaskNameController.text,
-                                tags: TaskTagController.text.split(","),
-                                subTasks: [], superTask: null,
-                                location: TaskLocController.text,
-                                priority: TaskPriorController.text.isEmpty ? 0 : int.parse(TaskPriorController.text),
-                              ));
-                            });
-
-
-                          },
-                          child: Text("Create"),
-                        ),
-                      ),
-                      Container(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); //창 닫기 // close Dialog with cancel
-                          },
-                          child: Text("Cancel"),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-        ],
       ),
     );
   }

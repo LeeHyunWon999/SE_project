@@ -1,12 +1,22 @@
 //import 'dart:ffi';
 
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
-
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+
 import 'requirement_2.dart';
+//import 'ExampleAlarmEditScreen.dart';
+import 'alarm.dart';
+import 'edit_alarm.dart';
+import 'ring.dart';
+import 'complex_ring.dart';
+import 'tile.dart';
+import 'home.dart';
+import 'package:intl/intl.dart';
 
 // 필수 요구사항 1번에 대한 기능들 작성 // Functions for mandatory requirements #1
 // 다른 요구사항에서 1번의 수정이 필요한 경우 수정가능 // editable if other requirements needs to do
@@ -180,21 +190,55 @@ class TodoItem {
 
 
 
+
+
+
+void showEditAlarmModal(BuildContext context, Function(DateTime) onSave) {
+  showModalBottomSheet(
+    context: context,
+    enableDrag: true,
+    showDragHandle: true,
+    isScrollControlled: false,
+    // isScrollControlled: true, // 모달을 전체 화면으로 표시하려면 true로 설정
+    builder: (BuildContext context) {
+      // return Container(
+      //   padding: EdgeInsets.only(
+      //     bottom: MediaQuery.of(context).viewInsets.bottom,
+      //   ),
+      //   child: ExampleAlarmEditScreen(),
+      // );
+      return ExampleAlarmEditScreen(
+        onSave: onSave,
+      );
+    },
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
 // 정보 및 수정창 // information & edit window
 void informWindow(BuildContext context, TodoItem item, List<TodoItem> items, List<TodoItem> items_arr,
     Function createTask, Function removeTask, Function updateFileName) {
 
-  //fileName_temp = item.fileName ?? '_';
+
 
   showDialog(
     context: context,
     barrierDismissible: true,
     builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text(item.title + "Attributes"),
-        content: StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return Column(
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return AlertDialog(
+            title: Text(item.title + "Attributes"),
+            content: Column(
               children: [
                 Text(
                     "Show here editable attrs, Description, Hyperlinks, File + preview"),
@@ -260,170 +304,192 @@ void informWindow(BuildContext context, TodoItem item, List<TodoItem> items, Lis
                   onPressed: (){copyFileToStorage(item, item.fileName);},
                 ),
               ],
-            );
-          },
-        ),
-        actions: <Widget>[
-          Container(
-            // 새 하위작업 생성 // create new subtask
-            child: ElevatedButton(
-              onPressed: () {
-                //Navigator.of(context).pop(); //창 닫기 // close Dialog with apply changes
-                // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
-                final TaskNameController = TextEditingController();
-                final TaskPriorController = TextEditingController();
-                final TaskLocController = TextEditingController();
-                final TaskTagController = TextEditingController();
-                // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
-                // myController.text 형식으로 접근 // access fields by like myController.text
+            ),
+            actions: <Widget>[
+              Container(
+                // 새 하위작업 생성 // create new subtask
+                child: ElevatedButton(
+                  onPressed: () {
+                    //Navigator.of(context).pop(); //창 닫기 // close Dialog with apply changes
+                    // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
+                    final TaskNameController = TextEditingController();
+                    final TaskPriorController = TextEditingController();
+                    final TaskLocController = TextEditingController();
+                    final TaskTagController = TextEditingController();
+                    // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
+                    // myController.text 형식으로 접근 // access fields by like myController.text
 
-                showDialog(
-                  context: context,
-                  barrierDismissible: true,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Icon(Icons.add),
-                      content: Container(
-                        // 너비지정용 // setting width by this
-                        width: 600,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text("creating subTask UI"),
-                            TextField(
-                                controller: TaskNameController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'Task name',
-                                )),
-                            SizedBox(
-                              height: 10,
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Icon(Icons.add),
+                          content: Container(
+                            // 너비지정용 // setting width by this
+                            width: 600,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("creating subTask UI"),
+                                TextField(
+                                    controller: TaskNameController,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      labelText: 'Task name',
+                                    )),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                TextField(
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9]'))],
+                                    controller: TaskPriorController,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      labelText:
+                                      'Priority',
+                                    )),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                TextField(
+                                    controller: TaskLocController,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      labelText: 'location(optional)',
+                                    )),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                TextField(
+                                    controller: TaskTagController,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      labelText:
+                                      'tags(optional)',
+                                    )),
+                                // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                //!!
+                              ],
                             ),
-                            TextField(
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9]'))],
-                                controller: TaskPriorController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText:
-                                  'Priority',
-                                )),
-                            SizedBox(
-                              height: 10,
+                          ),
+                          actions: <Widget>[
+                            Container(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(); //창 닫기 // close Dialog with Create tasks
+                                  // 작업 생성 시도
+                                  createTask(item, TaskNameController, TaskTagController, TaskLocController, TaskPriorController, items_arr);
+                                },
+                                child: Text("Create"),
+                              ),
                             ),
-                            TextField(
-                                controller: TaskLocController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'location(optional)',
-                                )),
-                            SizedBox(
-                              height: 10,
+                            Container(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(); //창 닫기 // close Dialog with cancel
+                                },
+                                child: Text("Cancel"),
+                              ),
                             ),
-                            TextField(
-                                controller: TaskTagController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText:
-                                  'tags(optional)',
-                                )),
-                            // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
-                            SizedBox(
-                              height: 10,
-                            ),
-                            //!!
                           ],
-                        ),
-                      ),
-                      actions: <Widget>[
-                        Container(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .pop(); //창 닫기 // close Dialog with Create tasks
-                              // 작업 생성 시도
-                              createTask(item, TaskNameController, TaskTagController, TaskLocController, TaskPriorController, items_arr);
-                            },
-                            child: Text("Create"),
-                          ),
-                        ),
-                        Container(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .pop(); //창 닫기 // close Dialog with cancel
-                            },
-                            child: Text("Cancel"),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     );
                   },
-                );
-              },
-              child: Text("Create SubTask.."),
-            ),
-          ),
-          Container(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); //창 닫기 // close Dialog with apply changes
-              },
-              child: Text("Apply"),
-            ),
-          ),
-          Container(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); //창 닫기 // close Dialog with discard changes
-              },
-              child: Text("Cancel"),
-            ),
-          ),
-          Container(
-            child: ElevatedButton(
-              onPressed: () {
-                // 상위 컨텍스트 저장
-                BuildContext parentDialogContext = context;
-                // 진짜 삭제할 것인지 묻기 // ask really want to delete
-                showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        content: Text(
-                            "Do you really want to delete this task?\n All subtasks will also be deleted."),
-                        actions: <Widget>[
-                          Container(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // 삭제작업 진행
-                                removeTask(items, item, items_arr);
-                                Navigator.of(parentDialogContext)
-                                    .pop();
-                                Navigator.of(context).pop();
-                                Fluttertoast.showToast(msg: "Deleted Task!");
-                              },
-                              child: Text("Yes"),
-                            ),
-                          ),
-                          Container(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text("No"),
-                            ),
-                          ),
-                        ],
-                      );
-                    });
-              },
-              child: Text("Delete"),
-            ),
-          ),
-        ],
+                  child: Text("Create SubTask.."),
+                ),
+              ),
+              Container(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop(); //창 닫기 // close Dialog with apply changes
+                  },
+                  child: Text("Apply"),
+                ),
+              ),
+              Container(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop(); //창 닫기 // close Dialog with discard changes
+                  },
+                  child: Text("Cancel"),
+                ),
+              ),
+              Container(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // 상위 컨텍스트 저장
+                    BuildContext parentDialogContext = context;
+                    // 진짜 삭제할 것인지 묻기 // ask really want to delete
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            content: Text(
+                                "Do you really want to delete this task?\n All subtasks will also be deleted."),
+                            actions: <Widget>[
+                              Container(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    // 삭제작업 진행
+                                    removeTask(items, item, items_arr);
+                                    Navigator.of(parentDialogContext)
+                                        .pop();
+                                    Navigator.of(context).pop();
+                                    Fluttertoast.showToast(msg: "Deleted Task!");
+                                  },
+                                  child: Text("Yes"),
+                                ),
+                              ),
+                              Container(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text("No"),
+                                ),
+                              ),
+                            ],
+                          );
+                        });
+                  },
+                  child: Text("Delete"),
+                ),
+              ),
+              SwitchListTile(
+                title: Text("Set Alarm"),
+                value: item.isAlarmEnabled,
+                onChanged: (bool value) {
+                  setState(() {
+                    item.isAlarmEnabled = value;
+                    if (value) {
+                      // toggle이 켜질 때만 모달 표시
+                      showEditAlarmModal(context, (DateTime time){
+                        // Update the TodoItem with the alarm time
+                        setState(() {
+                          item.alarmTime = time;
+                        });
+                      });
+                      // toggle이 꺼질 때는 아무것도 하지 않음.
+                    } // if
+                  });
+                },
+              ),
+
+              // Text("Alarm time : ${item.alarmTime}")
+              Text("Alarm time : ${item.isAlarmEnabled && item.alarmTime != null ? DateFormat('MM/dd HH:mm').format(item.alarmTime!) : 'no settings'}"),
+            ],
+          );
+        }
       );
     },
   );
@@ -451,9 +517,65 @@ class TodoList extends StatefulWidget {
 // 위에껀 상태 변경 가능한 위젯 껍데기고, 이게 위젯 내부의 내용을 채워주는 자유로운 내부 핵심 클래스 // Upper class is 'stateful' outer class, this is core class
 class TodoListState extends State<TodoList> {
 
+  // late List<AlarmSettings> alarms;
+  //
+  // static StreamSubscription? subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // print("위젯을 생성합니다!");
+    // loadAlarms();
+    // subscription ??= Alarm.ringStream.stream.listen(    // subscription이 null이면, 알람이 울리면 navigateToRingScreen을 트리거하는 Alarm.ringStream을 듣도록 설정됨.
+    //         (alarmSettings) {
+    //           print("Alarm event received"); // 로깅 추가
+    //           navigateToRingScreen(alarmSettings);
+    //     });
+    // print("subscription 생성 완료");
+  }
 
 
-  //String fileName_temp = "_";
+
+  // Alarm.getAlarms()의 반환값으로 alarms 리스트의 상태를 설정하고, 날짜와 시간으로 알람을 정렬하여 표시
+  // void loadAlarms() {
+  //   setState(() {
+  //     alarms = Alarm.getAlarms();
+  //     alarms.sort((a, b) => a.dateTime.isBefore(b.dateTime) ? 0 : 1);
+  //   });
+  //   print("알람 로드 완료");
+  // }
+
+
+
+  // Future<void> navigateToRingScreen(AlarmSettings alarmSettings) async {
+  //   // complexNotification 값에 따라 다른 스크린으로 네비게이션
+  //   if(mounted) {
+  //     if (alarmSettings.complexNotification) {
+  //       //ComplexAlarmRingScreen으로 네비게이션
+  //       await Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) =>
+  //               ComplexAlarmRingScreen(alarmSettings: alarmSettings),
+  //         ),
+  //       );
+  //     } else {
+  //       // ExampleAlarmRingScreen으로 네비게이션
+  //       await Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) =>
+  //               ExampleAlarmRingScreen(
+  //                 alarmSettings: alarmSettings,),
+  //         ),
+  //       );
+  //     }
+  //   }
+  //   else print("주의 : 화면 전환 처리 도중 마운트 체크가 false가 되어있음!!");
+  //   if(mounted) {
+  //     loadAlarms();
+  //   } else print("주의 : 마운트 2스택");
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -463,6 +585,13 @@ class TodoListState extends State<TodoList> {
         return _buildItem2(widget.items, widget.items[index]); // 0층 빌드
       },
     );
+  }
+
+  @override
+  void dispose() {
+    //print("위젯이 사라집니다!!");
+    //subscription?.cancel();
+    super.dispose();
   }
 
 

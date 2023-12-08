@@ -3,14 +3,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'android_alarm.dart';
 import 'firebase_options.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
+import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
 // 직접 만든 파일들 // files we created
 import 'main_tree.dart';
 import 'requirement_1.dart';
 import 'requirement_2.dart';
+import 'storage.dart';
+import 'alarm.dart';
 
 
 // 페이지 구성 : 로그인 화면 -> 메인화면(할 일 목록 보여주기; 근데 이제 여러가지 뷰를 통해서)
@@ -22,8 +26,20 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  WidgetsFlutterBinding.ensureInitialized();
+  await AndroidAlarm.init();
+  await AlarmStorage.init();
+  await Alarm.init(showDebugLogs : true);
+
   requestPermissions();
+
+
+  // runApp() 호출 전 Flutter SDK 초기화
+  KakaoSdk.init(
+    nativeAppKey: 'fa25faaaf5e0177b920698c3890c2f0b',
+    javaScriptAppKey: '3b921a1fa9afa8515eb40bedc61b91b3',
+  );
+
+
 
   runApp(const MyApp());
 }

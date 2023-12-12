@@ -62,6 +62,7 @@ Future<bool> pickAndSaveFileLocally(TodoItem item) async {
 
     // 파일명 저장
     item.fileName = pickedFile.name;
+    Fluttertoast.showToast(msg: "Uploaded Files!");
 
     return true;
   } else {
@@ -109,6 +110,7 @@ Future<void> copyFileToStorage(TodoItem item, String fileName) async {
 
 
     print('File copied to user storage: $storageFilePath');
+    Fluttertoast.showToast(msg: "Downloaded Files!");
   } else {
     print('Temp file does not exist');
   }

@@ -171,6 +171,12 @@ class _ViewWidget_temp_State extends State<ViewWidget_priorityView> {
     });
   }
 
+  void updateState() {
+    setState(() {
+      // 상태 업데이트 로직
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +195,7 @@ class _ViewWidget_temp_State extends State<ViewWidget_priorityView> {
       ),
       onTap: (){
         // 여기서도 클릭시 정보페이지 볼 수 있게 할 수 있을까?
-        informWindow(context, widget.item, widget.items, widget.items_arr, createTask,removeTask, updateFileName); // 이거부터 수정해야 함 : 콜백으로 변경
+        informWindow(context, widget.item, widget.items, widget.items_arr, createTask,removeTask, updateFileName, updateState); // 이거부터 수정해야 함 : 콜백으로 변경
       },
     );
   }
@@ -356,6 +362,13 @@ class _ViewWidget_DueDateView_State extends State<ViewWidget_DueDateView> {
     });
   }
 
+  // 단순 업데이트
+  void updateState() {
+    setState(() {
+      // 상태 업데이트 로직
+    });
+  }
+
 
 
 
@@ -376,7 +389,7 @@ class _ViewWidget_DueDateView_State extends State<ViewWidget_DueDateView> {
       ),
       onTap: (){
         // 여기서도 클릭시 정보페이지 볼 수 있게 할 수 있을까?
-        informWindow(context, widget.item, widget.items, widget.items_arr, createTask,removeTask, updateFileName); // 이거부터 수정해야 함 : 콜백으로 변경
+        informWindow(context, widget.item, widget.items, widget.items_arr, createTask,removeTask, updateFileName, updateState); // 이거부터 수정해야 함 : 콜백으로 변경
       },
     );
   }
@@ -423,12 +436,14 @@ class ViewWidget_CalendarView extends StatefulWidget {
 // 캘린더뷰 알맹이
 class _ViewWidget_CalendarView_State extends State<ViewWidget_CalendarView> {
   DateTime selectedDate = DateTime.now();
+  DateTime focusedDate = DateTime.now(); // focusedDate를 상태로 관리합니다.
   List<TodoItem> selectedDateTasks = []; // 선택된 날짜의 할 일 목록
 
   // 날짜 클릭시 동작 : 밑에 리스트 깔짝추가도 해주기
   void onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     setState(() {
       this.selectedDate = selectedDay;
+      this.focusedDate = focusedDay; // focusedDate를 업데이트합니다.
       // UTC로 변환하고 시간 정보 제거
       DateTime dateOnly = DateTime.utc(selectedDay.year, selectedDay.month, selectedDay.day);
       selectedDateTasks = widget.tempMap[dateOnly] ?? [];
@@ -466,9 +481,9 @@ class _ViewWidget_CalendarView_State extends State<ViewWidget_CalendarView> {
           selectedDayPredicate: (date) {
             return isSameDay(selectedDate, date);
           },
-          focusedDay: DateTime.now(),  // 현재 날짜를 기준으로 달력을 표시
+          focusedDay: focusedDate,  // focusedDay를 상태 변수로 설정
           firstDay: DateTime(2020),    // 달력의 시작 날짜 설정
-          lastDay: DateTime(2030),     // 달력의 마지막 날짜 설정
+          lastDay: DateTime(2050),     // 달력의 마지막 날짜 설정
           calendarBuilders : CalendarBuilders(
             defaultBuilder: (context, date, _) {
               var hasTask = checkIfDateHasTask(date, widget.tempMap); // 이걸로 해당 날짜에 할 일이 있는지 확인
@@ -489,6 +504,16 @@ class _ViewWidget_CalendarView_State extends State<ViewWidget_CalendarView> {
             itemBuilder: (context, index) {
               return ListTile(
                 title: Text(selectedDateTasks[index].title),
+                trailing: Checkbox(
+                  value: selectedDateTasks[index].isCompleted,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      selectedDateTasks[index].isCompleted = value!;
+                      selectedDateTasks[index].updateProgress();
+                    });
+                    setState(() {});
+                  },
+                ),
               );
             },
           ),

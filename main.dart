@@ -90,7 +90,11 @@ class _MyHomePageState extends State<MyHomePage> {
             width: 200,
             height: 200,
           ),
-          Text('Todo App'),
+          DefaultTextStyle(style: TextStyle(
+              fontSize: 50.0,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+          ), child: Text("Todo App"),),
           ElevatedButton(
             child: Text('Login'),
             onPressed: () async{

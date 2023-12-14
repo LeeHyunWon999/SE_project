@@ -741,7 +741,54 @@ void informWindow(
                                       height: 10,
                                     ),
                                     ElevatedButton(
-                                      onPressed: () {},
+                                      onPressed: () async {
+                                        // Lam의 구현이 잘 되는지 확인
+
+                                        TimeOfDay _selectedTime = TimeOfDay.now();
+                                        DateTime _selectedDate = DateTime.now();
+
+                                        Future<DateTime>
+                                        _showDueDatePicker() async {
+                                          final DateTime? picked1 =
+                                          await showDatePicker(
+                                              context: context,
+                                              initialDate: _selectedDate,
+                                              firstDate: _selectedDate,
+                                              lastDate:
+                                              DateTime.parse('2100-01-01'));
+
+                                          if (picked1 != null &&
+                                              picked1 != _selectedDate) {
+                                            setState(() {
+                                              _selectedDate = picked1;
+                                            });
+                                          }
+                                          final TimeOfDay? picked2 =
+                                          await showTimePicker(
+                                            context: context,
+                                            initialTime: _selectedTime,
+                                          );
+
+                                          if (picked2 != null &&
+                                              picked2 != _selectedTime) {
+                                            setState(() {
+                                              _selectedTime = picked2;
+                                            });
+                                          }
+                                          return new DateTime(
+                                            _selectedDate.year,
+                                            _selectedDate.month,
+                                            _selectedDate.day,
+                                            _selectedTime.hour,
+                                            _selectedTime.minute,
+                                          );
+                                        }
+
+                                        deadline = await _showDueDatePicker();
+
+                                        print(_selectedTime);
+                                        print(_selectedDate);
+                                      },
                                       child: Text("Select Due date"),
                                     ),
                                     Row(

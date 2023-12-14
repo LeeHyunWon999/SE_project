@@ -582,109 +582,312 @@ class _MyHomePageState extends State<MyHomePage> {
             TextButton(
               child: Text("Create New Root Tasks"),
               onPressed: () {
+                context;
                 // TextEditingController 추가로 Task 요소 관리하며 새 작업 생성 // managing TextField content : using controllers
                 final TaskNameController = TextEditingController();
+                final TaskDescController = TextEditingController();
                 final TaskPriorController = TextEditingController();
                 final TaskLocController = TextEditingController();
                 final TaskTagController = TextEditingController();
+
                 // 이들 중 일부는 상황에 따라 쓰이지 않거나 바뀔 수도 있음 // some of these could be not used or changed
                 // myController.text 형식으로 접근 // access fields by like myController.text
+
+                // showDialog(
+                //   context: context,
+                //   barrierDismissible: true,
+                //   builder: (BuildContext context) {
+                //     return AlertDialog(
+                //       title: Text("creating root task"),
+                //       content: Container(
+                //         // 너비지정용 // setting width by this
+                //         width: 600,
+                //         child: Column(
+                //           mainAxisSize: MainAxisSize.min,
+                //           children: [
+                //             TextField(
+                //                 controller: TaskNameController,
+                //                 decoration: InputDecoration(
+                //                   border: OutlineInputBorder(),
+                //                   labelText: 'Task name',
+                //                 )),
+                //             SizedBox(
+                //               height: 10,
+                //               width: 100,
+                //             ),
+                //             TextField(
+                //                 keyboardType: TextInputType.number,
+                //                 inputFormatters: [
+                //                   FilteringTextInputFormatter.allow(
+                //                       RegExp('[0-9]'))
+                //                 ],
+                //                 controller: TaskPriorController,
+                //                 decoration: InputDecoration(
+                //                   border: OutlineInputBorder(),
+                //                   labelText: 'Priority',
+                //                 )),
+                //             SizedBox(
+                //               height: 10,
+                //               width: 100,
+                //             ),
+                //             TextField(
+                //                 controller: TaskLocController,
+                //                 decoration: InputDecoration(
+                //                   border: OutlineInputBorder(),
+                //                   labelText: 'location(optional)',
+                //                 )),
+                //             SizedBox(
+                //               height: 10,
+                //               width: 100,
+                //             ),
+                //             TextField(
+                //                 controller: TaskTagController,
+                //                 decoration: InputDecoration(
+                //                   border: OutlineInputBorder(),
+                //                   labelText: 'tags(optional)',
+                //                 )),
+                //             // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
+                //             SizedBox(
+                //               height: 10,
+                //               width: 100,
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //       actions: <Widget>[
+                //         Container(
+                //           child: ElevatedButton(
+                //             onPressed: () {
+                //               Navigator.of(context)
+                //                   .pop(); //창 닫기 // close Dialog with Create tasks
+                //               // 작업 생성 시도
+                //               setState(() {
+                //                 gettedTasks?.add(TodoItem(
+                //                   title: TaskNameController.text,
+                //                   tags: TaskTagController.text.split(","),
+                //                   subTasks: [],
+                //                   superTask: null,
+                //                   location: TaskLocController.text,
+                //                   priority: TaskPriorController.text.isEmpty
+                //                       ? 0
+                //                       : int.parse(TaskPriorController.text),
+                //                 ));
+                //               });
+                //             },
+                //             child: Text("Create"),
+                //           ),
+                //         ),
+                //         Container(
+                //           child: ElevatedButton(
+                //             onPressed: () {
+                //               Navigator.of(context)
+                //                   .pop(); //창 닫기 // close Dialog with cancel
+                //             },
+                //             child: Text("Cancel"),
+                //           ),
+                //         ),
+                //       ],
+                //     );
+                //   },
+                // );
+
+
+                bool setDeadline = false; // 마감일 여부
+                DateTime deadline = DateTime.parse("1000-00-00"); // 마감일 설정용
 
                 showDialog(
                   context: context,
                   barrierDismissible: true,
                   builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text("creating root task"),
-                      content: Container(
-                        // 너비지정용 // setting width by this
-                        width: 600,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                                controller: TaskNameController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'Task name',
-                                )),
-                            SizedBox(
-                              height: 10,
-                              width: 100,
-                            ),
-                            TextField(
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp('[0-9]'))
+                    return StatefulBuilder(builder:
+                        (BuildContext context, StateSetter setState1) {
+                      return AlertDialog(
+                        title: Text("creating subTask"),
+                        content: Container(
+                          // 너비지정용 // setting width by this
+                          width: 600,
+                          child: ListView(
+                            // mainAxisSize: MainAxisSize.min,
+                            // crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextField(
+                                  controller: TaskNameController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'Task name',
+                                  )),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              TextField(
+                                  maxLines: null,
+                                  controller: TaskDescController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'Task Description',
+                                  )),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              TextField(
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp('[0-9]'))
+                                  ],
+                                  controller: TaskPriorController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'Priority',
+                                  )),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              TextField(
+                                  controller: TaskLocController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'location(optional)',
+                                  )),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              TextField(
+                                  controller: TaskTagController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'tags(optional)',
+                                  )),
+                              // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
+                              SizedBox(
+                                height: 10,
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  // Lam의 구현이 잘 되는지 확인
+
+                                  TimeOfDay _selectedTime = TimeOfDay.now();
+                                  DateTime _selectedDate = DateTime.now();
+
+                                  Future<DateTime>
+                                  _showDueDatePicker() async {
+                                    final DateTime? picked1 =
+                                    await showDatePicker(
+                                        context: context,
+                                        initialDate: _selectedDate,
+                                        firstDate: _selectedDate,
+                                        lastDate:
+                                        DateTime.parse('2100-01-01'));
+
+                                    if (picked1 != null &&
+                                        picked1 != _selectedDate) {
+                                      setState(() {
+                                        _selectedDate = picked1;
+                                      });
+                                    }
+                                    final TimeOfDay? picked2 =
+                                    await showTimePicker(
+                                      context: context,
+                                      initialTime: _selectedTime,
+                                    );
+
+                                    if (picked2 != null &&
+                                        picked2 != _selectedTime) {
+                                      setState(() {
+                                        _selectedTime = picked2;
+                                      });
+                                    }
+                                    return new DateTime(
+                                      _selectedDate.year,
+                                      _selectedDate.month,
+                                      _selectedDate.day,
+                                      _selectedTime.hour,
+                                      _selectedTime.minute,
+                                    );
+                                  }
+
+                                  deadline = await _showDueDatePicker();
+
+                                  print(_selectedTime);
+                                  print(_selectedDate);
+                                },
+                                child: Text("Select Due date"),
+                              ),
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: setDeadline,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        setDeadline = value!;
+                                        print("${setDeadline}");
+                                      });
+                                      setState(() {});
+                                    },
+                                  ),
+                                  Text("Activate Due date"),
                                 ],
-                                controller: TaskPriorController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'Priority',
-                                )),
-                            SizedBox(
-                              height: 10,
-                              width: 100,
-                            ),
-                            TextField(
-                                controller: TaskLocController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'location(optional)',
-                                )),
-                            SizedBox(
-                              height: 10,
-                              width: 100,
-                            ),
-                            TextField(
-                                controller: TaskTagController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'tags(optional)',
-                                )),
-                            // 하위작업은 루트작업 생성 후 진행 // subTask is not added at creating root Task
-                            SizedBox(
-                              height: 10,
-                              width: 100,
-                            ),
-                          ],
-                        ),
-                      ),
-                      actions: <Widget>[
-                        Container(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .pop(); //창 닫기 // close Dialog with Create tasks
-                              // 작업 생성 시도
-                              setState(() {
-                                gettedTasks?.add(TodoItem(
-                                  title: TaskNameController.text,
-                                  tags: TaskTagController.text.split(","),
-                                  subTasks: [],
-                                  superTask: null,
-                                  location: TaskLocController.text,
-                                  priority: TaskPriorController.text.isEmpty
-                                      ? 0
-                                      : int.parse(TaskPriorController.text),
-                                ));
-                              });
-                            },
-                            child: Text("Create"),
+                              ),
+                            ],
                           ),
                         ),
-                        Container(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .pop(); //창 닫기 // close Dialog with cancel
-                            },
-                            child: Text("Cancel"),
+                        actions: <Widget>[
+                          Container(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context)
+                                    .pop(); //창 닫기 // close Dialog with Create tasks
+                                // 작업 생성 시도
+                                // createTask(
+                                //   null,
+                                //   TaskNameController,
+                                //   TaskDescController,
+                                //   TaskTagController,
+                                //   TaskLocController,
+                                //   TaskPriorController,
+                                //   null,
+                                //   setDeadline,
+                                //   deadline,
+                                // );
+
+
+
+
+                                setState((){
+                                  gettedTasks?.add(TodoItem(
+                                    title: TaskNameController.text,
+                                    description: TaskDescController.text,
+                                    tags: TaskTagController.text.split(","),
+                                    subTasks: [],
+                                    superTask: null,
+                                    location: TaskLocController.text,
+                                    priority: TaskPriorController.text.isEmpty
+                                        ? 0
+                                        : int.parse(
+                                      TaskPriorController.text,
+                                    ),
+                                    isDeadlineEnabled: setDeadline,
+                                    deadline: deadline,
+                                  ));
+                                });
+
+
+                              },
+                              child: Text("Create"),
+                            ),
                           ),
-                        ),
-                      ],
-                    );
+                          Container(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context)
+                                    .pop(); //창 닫기 // close Dialog with cancel
+                              },
+                              child: Text("Cancel"),
+                            ),
+                          ),
+                        ],
+                      );
+                    });
                   },
                 );
               },
